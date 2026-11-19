@@ -368,7 +368,7 @@ app.get('/certificate/:certificate_no', async (req, res) => {
     `;
 
     const bottomSealHtml = cert.logo_url
-      ? '<div style="position: relative; display: inline-block;"><img src="' + cert.logo_url + '" alt="Seal" style="max-height: 82px; max-width: 82px; object-fit: contain; border-radius: 50%; border: 3px double #c59b27; padding: 3px; background: #fff;" onerror="this.style.display=\'none\'; document.getElementById(\'fallback-seal\').style.display=\'flex\';"><div id="fallback-seal" style="display: none;">' + defaultGoldSealHtml + '</div></div>'
+      ? '<div style="position: relative; display: inline-block;"><img src="' + cert.logo_url + '" alt="Seal" style="max-height: 82px; max-width: 82px; object-fit: contain; border-radius: 50%; border: 3px double #975a16; padding: 3px; background: #fff;" onerror="this.style.display=\'none\'; document.getElementById(\'fallback-seal\').style.display=\'flex\';"><div id="fallback-seal" style="display: none;">' + defaultGoldSealHtml + '</div></div>'
       : defaultGoldSealHtml;
 
     const warningNoticeHtml = cert.custom_notice
@@ -544,60 +544,37 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             text-align: justify;
         }
 
-        .qr-verify-row {
-            margin-top: 16px;
-            padding-top: 12px;
-            border-top: 1px dashed #cbd5e0;
+        /* শুধু পরিচ্ছন্ন QR কোড বক্স */
+        .qr-only-row {
+            margin-top: 14px;
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-end;
             align-items: center;
-            gap: 14px;
-            text-align: left;
-        }
-        .qr-meta {
-            flex: 1;
-            font-size: 11.5px;
-            color: #2d3748;
-            line-height: 1.5;
-        }
-        .qr-meta code {
-            display: inline-block;
-            background: #f1f5f9;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 10.5px;
-            color: #0f2b46;
-            word-break: break-all;
-            margin-top: 3px;
+            padding-right: 6px;
         }
         .qr-box {
             text-align: center;
             background: #fff;
-            border: 1px solid #c59b27;
-            padding: 5px;
+            border: 1.5px solid #975a16;
+            padding: 4px;
             border-radius: 4px;
             flex-shrink: 0;
         }
         .qr-box img {
             display: block;
-            width: 82px;
-            height: 82px;
+            width: 80px;
+            height: 80px;
         }
-        .qr-caption {
-            font-size: 9px;
-            font-weight: bold;
-            color: #0f2b46;
-            margin-top: 2px;
-            letter-spacing: 0.4px;
-        }
-        
+
+        /* আরও গাঢ় ও স্পষ্ট গোল্ডেন সিল */
         .official-gold-seal {
-            width: 82px;
-            height: 82px;
-            background: radial-gradient(circle, #f6e05e, #d69e2e, #b7791f);
+            width: 84px;
+            height: 84px;
+            background: radial-gradient(circle, #d69e2e, #975a16, #744210);
+            border: 2px solid #521b02;
             border-radius: 50%;
             padding: 3px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2), inset 0 0 4px rgba(255,255,255,0.8);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.32), inset 0 0 5px rgba(255,235,170,0.55);
             margin: 0 auto;
             display: flex;
             align-items: center;
@@ -607,28 +584,29 @@ app.get('/certificate/:certificate_no', async (req, res) => {
         .seal-inner {
             width: 74px;
             height: 74px;
-            border: 1.5px dashed #744210;
+            border: 1.5px dashed #ffecb3;
             border-radius: 50%;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            color: #521b02;
+            color: #fff8dc;
             font-family: 'Cinzel', serif;
             font-size: 9px;
             font-weight: 800;
-            letter-spacing: 0.5px;
-            line-height: 1.1;
+            letter-spacing: 0.6px;
+            line-height: 1.15;
+            text-shadow: 0 1px 1px rgba(0,0,0,0.5);
         }
         .seal-inner strong {
             font-size: 10.5px;
-            color: #3b1101;
+            color: #ffffff;
             margin: 2px 0;
             letter-spacing: 1px;
         }
 
         .footer-section {
-            margin-top: 32px;
+            margin-top: 26px;
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
@@ -734,18 +712,13 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             ${warningNoticeHtml}
 
             <div class="statement-text">
-                এই নথিটি একটি সংরক্ষিত অফিশিয়াল রেকর্ড হিসেবে গণ্য হবে। যেকোনো সময় এর বৈধতা যাচাই করতে অনলাইন পোর্টালে সার্টিফিকেট নম্বর দিয়ে অনুসন্ধান করা যাবে অথবা পাশের QR কোড স্ক্যান করা যাবে।<br>
+                এই নথিটি একটি সংরক্ষিত অফিশিয়াল রেকর্ড হিসেবে গণ্য হবে। যেকোনো সময় এর বৈধতা যাচাই করতে অনলাইন পোর্টালে সার্টিফিকেট নম্বর দিয়ে অনুসন্ধান করা যাবে অথবা QR কোড স্ক্যান করা যাবে।<br>
                 <em>This document serves as an authentic official record. Validity and status can be verified anytime online using the certificate number or by scanning the QR code.</em>
             </div>
 
-            <div class="qr-verify-row">
-                <div class="qr-meta">
-                    <strong>অনলাইন ভেরিফিকেশন লিংক / Digital Verification URL:</strong><br>
-                    <code>${fullVerifyUrl}</code>
-                </div>
+            <div class="qr-only-row">
                 <div class="qr-box">
                     <img src="${qrImageUrl}" alt="Verification QR Code" onerror="this.parentElement.style.display='none';">
-                    <div class="qr-caption">SCAN TO VERIFY</div>
                 </div>
             </div>
 
