@@ -79,19 +79,19 @@ function isValidAdminPassword(req) {
 }
 
 const adminHtml = `<!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>অ্যাডমিন প্যানেল - ট্রেডমার্ক এন্ট্রি ও কাস্টমাইজেশন</title>
+    <title>Admin Panel - Trademark Entry & Customization</title>
     <style>
-        body { font-family: 'SolaimanLipi', 'Kalpurush', Arial, sans-serif; background-color: #f0f3f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 25px 0; }
+        body { font-family: Arial, sans-serif; background-color: #f0f3f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 25px 0; }
         .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); width: 100%; max-width: 500px; box-sizing: border-box; }
         h2 { text-align: center; color: #1a365d; margin-top: 0; margin-bottom: 20px; }
         label { font-weight: bold; font-size: 13.5px; color: #2d3748; display: block; margin-top: 10px; }
         input, select, textarea, button { width: 100%; padding: 10px; margin: 6px 0 6px 0; border: 1px solid #cbd5e0; border-radius: 5px; box-sizing: border-box; font-size: 14.5px; font-family: inherit; }
         .hint-text { font-size: 11.5px; color: #718096; margin-bottom: 10px; display: block; }
-        textarea { resize: vertical; min-height: 80px; }
+        textarea { resize: vertical; min-height: 90px; }
         button { background-color: #1a365d; color: white; border: none; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 12px; }
         button:hover { background-color: #2b6cb0; }
         button:disabled { background-color: #a0aec0; cursor: not-allowed; }
@@ -105,59 +105,59 @@ const adminHtml = `<!DOCTYPE html>
 <body>
 <div class="container">
     <div id="loginSection">
-        <h2>অ্যাডমিন লগইন</h2>
+        <h2>Admin Login</h2>
         <form id="loginForm">
-            <label for="adminPassword">অ্যাডমিন পাসওয়ার্ড:</label>
-            <input type="password" id="adminPassword" placeholder="পাসওয়ার্ড লিখুন" required>
-            <button type="submit" id="loginBtn">প্রবেশ করুন</button>
+            <label for="adminPassword">Admin Password:</label>
+            <input type="password" id="adminPassword" placeholder="Enter admin password" required>
+            <button type="submit" id="loginBtn">Login</button>
         </form>
         <div id="loginMessage"></div>
     </div>
 
     <div id="adminSection" style="display: none;">
-        <h2>ট্রেডমার্ক সনদ এন্ট্রি ও কাস্টমাইজেশন</h2>
+        <h2>Trademark Certificate Entry</h2>
         <form id="addCertificateForm">
-            <label for="certNo">সার্টিফিকেট নাম্বার *</label>
-            <input type="text" id="certNo" placeholder="যেমন: TM-7674" required>
+            <label for="certNo">Certificate Number *</label>
+            <input type="text" id="certNo" placeholder="e.g. TM-7674" required>
 
-            <label for="serialNo">সিরিয়াল নং / Serial No. (ঐচ্ছিক)</label>
-            <input type="text" id="serialNo" placeholder="যেমন: 6438">
+            <label for="serialNo">Serial No. (Optional)</label>
+            <input type="text" id="serialNo" placeholder="e.g. 57265">
 
-            <label for="regNo">রেজিস্ট্রেশন নং / Registration No. (ঐচ্ছিক)</label>
-            <input type="text" id="regNo" placeholder="যেমন: REG-582670">
+            <label for="regNo">Registration No. (Optional)</label>
+            <input type="text" id="regNo" placeholder="e.g. 193377">
 
-            <label for="ownerName">মালিকের নাম / স্বত্বাধিকারী *</label>
-            <input type="text" id="ownerName" placeholder="যেমন: Shaikat Hasan" required>
+            <label for="ownerName">Proprietor / Owner Name *</label>
+            <input type="text" id="ownerName" placeholder="e.g. Shaikat Hasan" required>
 
-            <label for="tmName">ট্রেডমার্ক / ব্র্যান্ডের নাম *</label>
-            <input type="text" id="tmName" placeholder="যেমন: Bongodb" required>
+            <label for="tmName">Trademark Name *</label>
+            <input type="text" id="tmName" placeholder="e.g. Bongodb" required>
 
-            <label for="orgName">প্রতিষ্ঠানের নাম / হেডার (ঐচ্ছিক)</label>
-            <input type="text" id="orgName" placeholder="যেমন: Brand & Trademark Registry Record">
+            <label for="orgName">Registry Header / Organization Name (Optional)</label>
+            <input type="text" id="orgName" placeholder="e.g. Brand & Trademark Registry Record">
 
-            <label for="logoUrl">লোগো লিংক (Logo URL - ঐচ্ছিক)</label>
+            <label for="logoUrl">Logo URL (Optional)</label>
             <input type="url" id="logoUrl" placeholder="https://example.com/logo.png">
 
-            <label for="verifiedSign">বাম পাশের সাইন / নাম (Verified By - ঐচ্ছিক)</label>
-            <input type="text" id="verifiedSign" placeholder="যেমন: Asik (ফাঁকা রাখলে চিকন কলমের সাইন বসবে)">
+            <label for="verifiedSign">Left Signature / Verified By (Optional)</label>
+            <input type="text" id="verifiedSign" placeholder="Leave blank for thin pen signature">
 
-            <label for="authSign">ডান পাশের স্বাক্ষর (Authorized Sign - ঐচ্ছিক)</label>
-            <input type="text" id="authSign" placeholder="যেমন: Shaikat (ফাঁকা রাখলে চিকন কলমের সাইন বসবে)">
+            <label for="authSign">Right Signature / Authorized Signatory (Optional)</label>
+            <input type="text" id="authSign" placeholder="Leave blank for thin pen signature">
 
-            <label for="status">স্ট্যাটাস:</label>
+            <label for="status">Status:</label>
             <select id="status">
-                <option value="Active">Active (সক্রিয়)</option>
-                <option value="Pending">Pending (অপেক্ষমাণ)</option>
-                <option value="Expired">Expired (মেয়াদোত্তীর্ণ)</option>
+                <option value="Active">Active</option>
+                <option value="Pending">Pending</option>
+                <option value="Expired">Expired</option>
             </select>
 
-            <label for="customNotice">আইনি সতর্কতা / Legal Notice (কাস্টমাইজযোগ্য):</label>
-            <textarea id="customNotice" placeholder="ট্রেডমার্কের আইনি সতর্কবার্তা বা নিজস্ব শর্ত লিখুন..."></textarea>
-            <span class="hint-text">ফাঁকা রাখলে ডিফল্ট ট্রেডমার্ক আইনি সতর্কবার্তা ব্যবহৃত হবে।</span>
+            <label for="customNotice">Legal Notice / Terms (Customizable):</label>
+            <textarea id="customNotice" placeholder="Enter legal notice or terms..."></textarea>
+            <span class="hint-text">Leave blank to use the standard trademark legal notice.</span>
 
-            <button type="submit" id="submitBtn">ডাটাবেইজে সেভ করুন</button>
+            <button type="submit" id="submitBtn">Save to Database</button>
             <div id="viewCertLink" style="display:none;"></div>
-            <button type="button" id="logoutBtn" class="logout-btn">লগআউট</button>
+            <button type="button" id="logoutBtn" class="logout-btn">Logout</button>
         </form>
         <div id="message"></div>
     </div>
@@ -227,13 +227,13 @@ const adminHtml = `<!DOCTYPE html>
         var enteredPassword = adminPasswordInput.value.trim();
         if (!enteredPassword) {
             loginMessage.style.color = 'red';
-            loginMessage.innerText = 'অনুগ্রহ করে পাসওয়ার্ড লিখুন';
+            loginMessage.innerText = 'Please enter the admin password';
             return;
         }
 
         loginBtn.disabled = true;
         loginMessage.style.color = 'blue';
-        loginMessage.innerText = 'পাসওয়ার্ড যাচাই হচ্ছে...';
+        loginMessage.innerText = 'Verifying password...';
 
         verifyPassword(enteredPassword)
             .then(function(response) {
@@ -248,12 +248,12 @@ const adminHtml = `<!DOCTYPE html>
                     loginMessage.innerText = '';
                     showAdminPanel();
                 } else {
-                    showLoginPanel((data.result && data.result.error) || 'ভুল পাসওয়ার্ড! আবার চেষ্টা করুন।', 'red');
+                    showLoginPanel((data.result && data.result.error) || 'Invalid password! Please try again.', 'red');
                 }
             })
             .catch(function() {
                 loginMessage.style.color = 'red';
-                loginMessage.innerText = '❌ সার্ভারের সাথে কানেক্ট করা যাচ্ছে না!';
+                loginMessage.innerText = 'Unable to connect to the server!';
             })
             .finally(function() {
                 loginBtn.disabled = false;
@@ -272,13 +272,13 @@ const adminHtml = `<!DOCTYPE html>
 
         var currentPassword = sessionStorage.getItem(PASS_STORAGE_KEY) || '';
         if (!currentPassword) {
-            showLoginPanel('সেশন শেষ হয়েছে, আবার লগইন করুন।', 'red');
+            showLoginPanel('Session expired. Please log in again.', 'red');
             return;
         }
 
         submitBtn.disabled = true;
         messageDiv.style.color = 'blue';
-        messageDiv.innerText = 'ডাটা সেভ হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন...';
+        messageDiv.innerText = 'Saving record, please wait...';
         viewCertLink.style.display = 'none';
 
         var certVal = document.getElementById('certNo').value.trim();
@@ -312,20 +312,20 @@ const adminHtml = `<!DOCTYPE html>
             .then(function(resData) {
                 if (resData.ok) {
                     messageDiv.style.color = 'green';
-                    messageDiv.innerText = '✅ সফলভাবে ডাটাবেইজে যোগ করা হয়েছে!';
-                    viewCertLink.innerHTML = '<a href="/certificate/' + encodeURIComponent(certVal) + '" target="_blank" class="view-btn">📄 সার্টিফিকেট দেখুন ও প্রিন্ট করুন</a>';
+                    messageDiv.innerText = 'Saved to database successfully!';
+                    viewCertLink.innerHTML = '<a href="/certificate/' + encodeURIComponent(certVal) + '" target="_blank" class="view-btn">View & Print Certificate</a>';
                     viewCertLink.style.display = 'block';
                     addCertificateForm.reset();
                 } else if (resData.status === 401) {
-                    showLoginPanel('❌ ভুল পাসওয়ার্ড! আবার লগইন করুন।', 'red');
+                    showLoginPanel('Invalid password! Please log in again.', 'red');
                 } else {
                     messageDiv.style.color = 'red';
-                    messageDiv.innerText = '❌ এরর: ' + ((resData.result && resData.result.error) || 'সেভ করা যায়নি!');
+                    messageDiv.innerText = 'Error: ' + ((resData.result && resData.result.error) || 'Could not save!');
                 }
             })
             .catch(function() {
                 messageDiv.style.color = 'red';
-                messageDiv.innerText = '❌ সার্ভারের সাথে কানেক্ট করা যাচ্ছে না!';
+                messageDiv.innerText = 'Unable to connect to the server!';
             })
             .finally(function() {
                 submitBtn.disabled = false;
@@ -358,18 +358,13 @@ app.get('/certificate/:certificate_no', async (req, res) => {
     if (!cert) {
       return res.status(404).send(`
         <div style="text-align: center; margin-top: 50px; font-family: Arial, sans-serif;">
-          <h2>❌ সার্টিফিকেট পাওয়া যায়নি / Certificate Not Found</h2>
-          <p>আপনার দেওয়া সার্টিফিকেট নম্বরটি ডাটাবেইজে নেই।</p>
-          <a href="/admin" style="color: #007bff; text-decoration: none;">অ্যাডমিন প্যানেলে ফিরে যান</a>
+          <h2>Certificate Not Found</h2>
+          <p>The requested certificate number does not exist in the database.</p>
+          <a href="/admin" style="color: #007bff; text-decoration: none;">Return to Admin Panel</a>
         </div>
       `);
     }
 
-    const formattedDate = new Date(cert.issue_date).toLocaleDateString('bn-BD', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
     const formattedDateEn = new Date(cert.issue_date).toLocaleDateString('en-GB', {
       year: 'numeric',
       month: 'short',
@@ -380,7 +375,6 @@ app.get('/certificate/:certificate_no', async (req, res) => {
     const safeOwnerName = escapeHtml(cert.owner_name);
     const safeTrademarkName = escapeHtml(cert.trademark_name);
     const safeStatus = escapeHtml(cert.status);
-    const safeDate = escapeHtml(formattedDate);
     const safeDateEn = escapeHtml(formattedDateEn);
 
     const rawSerialNo = cert.serial_no || ('SL-' + cert.certificate_no);
@@ -414,23 +408,24 @@ app.get('/certificate/:certificate_no', async (req, res) => {
       : '';
 
     const legalNoticeHtml = cert.custom_notice
-      ? '<div class="legal-box"><strong>আইনি সতর্কতা / Legal Notice:</strong><br>' + escapeHtml(cert.custom_notice).replace(/\n/g, '<br>') + '</div>'
+      ? '<div class="legal-box"><strong>Legal Notice:</strong><br>' + escapeHtml(cert.custom_notice).replace(/\n/g, '<br>') + '</div>'
       : `<div class="legal-box">
-            <strong>আইনি সতর্কতা / Legal Notice:</strong><br>
-            এই সনদে উল্লিখিত ট্রেডমার্ক চিহ্ন ও স্বত্বাধিকারীর অধিকার সংরক্ষিত। অনুমতি ব্যতিরেকে এর অননুমোদিত ব্যবহার, নকল, অনুকরণ বা অপব্যবহার আইনগতভাবে নিষিদ্ধ এবং স্বত্ব লঙ্ঘন হিসেবে গণ্য হবে।<br>
-            <em>Rights in this trademark mark and representation belong to the proprietor. Unauthorized use, imitation, or infringement is strictly prohibited by law.</em>
+            <strong>Legal Notice:</strong><br>
+            Registration is given for 7 years, from the above-mentioned date and may then be renewed for a period of 10 years, and also at the expiration of each period of 10 years, thereafter.<br>
+            This certificate is not for use in legal proceeding or for obtaining registration abroad.<br>
+            Note: Upon any change of ownership of this Trade Mark, or change in address, application should at once be made to Registrar for the change.
          </div>`;
 
     const orgHeader = escapeHtml(cert.organization_name || 'BRAND & TRADEMARK REGISTRY RECORD');
 
     const certHtml = `<!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Certificate of Trademark Registration - ${safeCertNo}</title>
+    <title>Certificate of Registration of Trademark - ${safeCertNo}</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;500&family=Cinzel:wght@600;700;800;900&family=Noto+Serif+Bengali:wght@400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;500&family=Cinzel:wght@600;700;800;900&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap');
 
         body {
             background-color: #3b4252;
@@ -438,7 +433,7 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             padding: 25px 0;
             display: flex;
             justify-content: center;
-            font-family: 'Noto Serif Bengali', 'SolaimanLipi', 'Kalpurush', Georgia, serif;
+            font-family: 'Cormorant Garamond', Georgia, serif;
         }
         
         .page {
@@ -508,13 +503,13 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             justify-content: space-between;
             align-items: baseline;
             margin-bottom: 10px;
-            font-size: 12px;
+            font-size: 14px;
             color: #2d3748;
             font-weight: 600;
         }
         .handwritten-serial-no {
             font-family: 'Caveat', cursive;
-            font-size: 19px;
+            font-size: 20px;
             font-weight: 400;
             color: #102a56;
             letter-spacing: 0.6px;
@@ -527,41 +522,44 @@ app.get('/certificate/:certificate_no', async (req, res) => {
         .header-top {
             font-family: 'Cinzel', serif;
             letter-spacing: 2.5px;
-            font-size: 11.5px;
+            font-size: 12px;
             color: #718096;
             margin-bottom: 4px;
             text-transform: uppercase;
             font-weight: 800;
         }
-        .main-title-bn {
-            font-size: 25px;
-            font-weight: 700;
-            color: #0f2b46;
-            margin: 0;
-        }
         .main-title-en {
             font-family: 'Cinzel', serif;
-            font-size: 14.5px;
-            font-weight: 700;
-            color: #b7791f;
-            letter-spacing: 2px;
-            margin: 4px 0 16px 0;
+            font-size: 22px;
+            font-weight: 800;
+            color: #0f2b46;
+            letter-spacing: 1.5px;
+            margin: 6px 0 14px 0;
             text-transform: uppercase;
+        }
+
+        .sub-meta-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            border-top: 1px solid #d2d6dc;
+            border-bottom: 1px solid #d2d6dc;
+            padding: 6px 4px;
+            margin-bottom: 14px;
+            font-size: 15px;
+            color: #0f2b46;
+            font-weight: 600;
         }
 
         .narrative-body {
             text-align: justify;
-            font-size: 14px;
-            line-height: 1.85;
+            font-size: 16.5px;
+            line-height: 1.75;
             color: #1f2937;
             margin: 14px 0;
         }
         .narrative-body p {
             margin: 10px 0;
-        }
-        .narrative-en {
-            font-size: 13.3px;
-            color: #374151;
         }
         .highlight-val {
             font-weight: 700;
@@ -600,9 +598,9 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             padding: 10px 14px;
             margin-top: 14px;
             text-align: justify;
-            font-size: 12.2px;
+            font-size: 14px;
             color: #7b341e;
-            line-height: 1.6;
+            line-height: 1.55;
             border-radius: 2px;
         }
 
@@ -663,9 +661,9 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             margin-bottom: 5px;
         }
         .sign-title {
-            font-size: 12px;
+            font-size: 14px;
             color: #4a5568;
-            font-weight: bold;
+            font-weight: 700;
         }
         
         .no-print-bar {
@@ -705,7 +703,7 @@ app.get('/certificate/:certificate_no', async (req, res) => {
 <body>
 
 <div class="no-print-bar">
-    <button class="print-btn" onclick="window.print()">🖨️ প্রিন্ট / PDF সংরক্ষণ করুন</button>
+    <button class="print-btn" onclick="window.print()">Print / Save PDF</button>
 </div>
 
 <div class="page">
@@ -719,20 +717,21 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             <div class="corner-accent br"></div>
 
             <div class="top-meta-row">
-                <span>CERT NO.: <span class="handwritten-inline-no">${safeCertNo}</span></span>
-                <span>সিরিয়াল নং / Serial No.: <span class="handwritten-serial-no">${displaySerialNo}</span></span>
+                <span>Certificate No.: <span class="handwritten-inline-no">${safeCertNo}</span></span>
+                <span>Serial No.: <span class="handwritten-serial-no">${displaySerialNo}</span></span>
             </div>
 
             <div class="header-top">${orgHeader}</div>
-            <h1 class="main-title-bn">ট্রেডমার্ক নিবন্ধন ও ভেরিফিকেশন সনদ</h1>
-            <div class="main-title-en">Certificate of Trademark Registration</div>
+            <h1 class="main-title-en">Certificate of Registration of Trademark</h1>
+
+            <div class="sub-meta-bar">
+                <span>Trademark / Reg. No.: <span class="handwritten-inline-no">${displayRegNo}</span></span>
+                <span>Date: <span class="highlight-val">${safeDateEn}</span></span>
+            </div>
 
             <div class="narrative-body">
                 <p>
-                    এতদ্বারা প্রত্যায়ন করা যাচ্ছে যে, <span class="highlight-val">${safeOwnerName}</span>-এর নামে <span class="highlight-val">${safeTrademarkName}</span> ট্রেডমার্কটি রেজিস্ট্রেশন নম্বর <span class="handwritten-inline-no">${displayRegNo}</span> এবং সার্টিফিকেট নম্বর <span class="handwritten-inline-no">${safeCertNo}</span>-এর অধীনে <span class="highlight-val">${safeDate}</span> তারিখের প্রেক্ষিতে নিবন্ধনভুক্ত করা হয়েছে, যার বর্তমান স্ট্যাটাস <span class="highlight-val">${safeStatus}</span>।
-                </p>
-                <p class="narrative-en">
-                    <em>This is to certify that the trademark <span class="highlight-val">${safeTrademarkName}</span> has been registered in the name of <span class="highlight-val">${safeOwnerName}</span> under Registration No. <span class="handwritten-inline-no">${displayRegNo}</span> (Certificate No. <span class="handwritten-inline-no">${safeCertNo}</span>) as of <span class="highlight-val">${safeDateEn}</span>, with current status recorded as <span class="highlight-val">${safeStatus}</span>.</em>
+                    Certified that the Trademark of which a representation is annexed hereto has been registered in the name of <span class="highlight-val">${safeOwnerName}</span> for the mark <span class="highlight-val">${safeTrademarkName}</span> under Registration No. <span class="handwritten-inline-no">${displayRegNo}</span> (Certificate No. <span class="handwritten-inline-no">${safeCertNo}</span>) as of <span class="highlight-val">${safeDateEn}</span>, with current status recorded as <span class="highlight-val">${safeStatus}</span>.
                 </p>
             </div>
 
@@ -750,13 +749,13 @@ app.get('/certificate/:certificate_no', async (req, res) => {
                 <div class="sign-box">
                     <div class="sign-space">${verifiedSignatureHtml}</div>
                     <div class="sign-line"></div>
-                    <div class="sign-title">যাচাইকারী কর্মকর্তা<br>Verified By</div>
+                    <div class="sign-title">Verified By</div>
                 </div>
 
                 <div class="sign-box">
                     <div class="sign-space">${authorizedSignatureHtml}</div>
                     <div class="sign-line"></div>
-                    <div class="sign-title">অনুমোদিত স্বাক্ষরকারী<br>Authorized Signatory</div>
+                    <div class="sign-title">Authorized Signatory</div>
                 </div>
             </div>
         </div>
@@ -785,13 +784,13 @@ app.post('/api/admin-login', (req, res) => {
     return res.status(200).json({ success: true });
   }
 
-  return res.status(401).json({ error: 'ভুল পাসওয়ার্ড! আবার চেষ্টা করুন।' });
+  return res.status(401).json({ error: 'Invalid password! Please try again.' });
 });
 
 app.post('/api/add-certificate', async (req, res) => {
   try {
     if (!isValidAdminPassword(req)) {
-      return res.status(401).json({ error: 'সঠিক অ্যাডমিন পাসওয়ার্ড প্রয়োজন' });
+      return res.status(401).json({ error: 'Valid admin password is required' });
     }
 
     await connectDB();
@@ -828,7 +827,7 @@ app.post('/api/add-certificate', async (req, res) => {
     res.status(201).json({ message: 'Certificate saved successfully', data: newCertificate });
   } catch (error) {
     if (error.code === 11000) {
-      return res.status(409).json({ error: 'এই সার্টিফিকেট নম্বরটি আগে থেকেই রয়েছে' });
+      return res.status(409).json({ error: 'This certificate number already exists' });
     }
     res.status(500).json({ error: error.message });
   }
@@ -842,7 +841,7 @@ app.get('/api/certificate/:certificate_no', async (req, res) => {
     });
 
     if (!certificate) {
-      return res.status(404).json({ error: 'এই সার্টিফিকেট নম্বরটি পাওয়া যায়নি' });
+      return res.status(404).json({ error: 'Certificate not found' });
     }
 
     res.status(200).json({ success: true, data: certificate });
