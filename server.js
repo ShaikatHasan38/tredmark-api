@@ -44,7 +44,7 @@ async function connectDB() {
   return cached.conn;
 }
 
-// আপগ্রেডেড ট্রেডমার্ক স্কিমা (কাস্টম লোগো, নোটিশ ও সংস্থার নামসহ)
+// ট্রেডমার্ক স্কিমা (Schema)
 const trademarkSchema = new mongoose.Schema({
   certificate_no: { type: String, required: true, unique: true },
   owner_name: { type: String, required: true },
@@ -68,7 +68,7 @@ function isValidAdminPassword(req) {
   return providedPassword === expectedPassword;
 }
 
-// অ্যাডমিন প্যানেল HTML (লোগো, নোটিশ ও অর্গানাইজেশন ফিল্ডসহ)
+// অ্যাডমিন প্যানেল HTML
 const adminHtml = `<!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -76,19 +76,19 @@ const adminHtml = `<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>অ্যাডমিন প্যানেল - ট্রেডমার্ক এন্ট্রি ও এডিটর</title>
     <style>
-        body { font-family: 'SolaimanLipi', 'Kalpurush', Arial, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 25px 0; }
-        .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 480px; box-sizing: border-box; }
-        h2 { text-align: center; color: #333; margin-top: 0; margin-bottom: 20px; }
-        label { font-weight: bold; font-size: 13.5px; color: #333; display: block; margin-top: 10px; }
-        input, select, textarea, button { width: 100%; padding: 10px; margin: 6px 0 12px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14.5px; font-family: inherit; }
+        body { font-family: 'SolaimanLipi', 'Kalpurush', Arial, sans-serif; background-color: #f0f3f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 25px 0; }
+        .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); width: 100%; max-width: 480px; box-sizing: border-box; }
+        h2 { text-align: center; color: #1a365d; margin-top: 0; margin-bottom: 20px; }
+        label { font-weight: bold; font-size: 13.5px; color: #2d3748; display: block; margin-top: 10px; }
+        input, select, textarea, button { width: 100%; padding: 10px; margin: 6px 0 12px 0; border: 1px solid #cbd5e0; border-radius: 5px; box-sizing: border-box; font-size: 14.5px; font-family: inherit; }
         textarea { resize: vertical; min-height: 75px; }
-        button { background-color: #28a745; color: white; border: none; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 10px; }
-        button:hover { background-color: #218838; }
-        button:disabled { background-color: #6c757d; cursor: not-allowed; }
-        .logout-btn { background-color: #dc3545; margin-top: 8px; }
-        .logout-btn:hover { background-color: #c82333; }
-        .view-btn { display: inline-block; width: 100%; text-align: center; padding: 10px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px; font-weight: bold; box-sizing: border-box; }
-        .view-btn:hover { background-color: #0056b3; }
+        button { background-color: #1a365d; color: white; border: none; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 10px; }
+        button:hover { background-color: #2b6cb0; }
+        button:disabled { background-color: #a0aec0; cursor: not-allowed; }
+        .logout-btn { background-color: #e53e3e; margin-top: 8px; }
+        .logout-btn:hover { background-color: #c53030; }
+        .view-btn { display: inline-block; width: 100%; text-align: center; padding: 10px; background-color: #b7791f; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px; font-weight: bold; box-sizing: border-box; }
+        .view-btn:hover { background-color: #975a16; }
         #message, #loginMessage { text-align: center; margin-top: 15px; font-weight: bold; }
     </style>
 </head>
@@ -111,16 +111,16 @@ const adminHtml = `<!DOCTYPE html>
             <input type="text" id="certNo" placeholder="যেমন: TM-762 বা TM-2026-001" required>
 
             <label for="ownerName">মালিকের নাম / স্বত্বাধিকারী *</label>
-            <input type="text" id="ownerName" placeholder="যেমন: shaikat hasan" required>
+            <input type="text" id="ownerName" placeholder="যেমন: Shaikat Hasan" required>
 
             <label for="tmName">ট্রেডমার্ক / ব্র্যান্ডের নাম *</label>
-            <input type="text" id="tmName" placeholder="যেমন: bongodb" required>
+            <input type="text" id="tmName" placeholder="যেমন: Bongodb" required>
 
-            <label for="orgName">প্রতিষ্ঠানের নাম / হেডার (ঐচ্ছিক)</label>
-            <input type="text" id="orgName" placeholder="যেমন: Intellectual Property Registry Cell">
+            <label for="orgName">প্রতিষ্ঠানের নাম / অথরিটি হেডার (ঐচ্ছিক)</label>
+            <input type="text" id="orgName" placeholder="যেমন: Intellectual Property Verification Registry">
 
-            <label for="logoUrl">লোগো ইমেজ লিঙ্ক (Logo URL - ঐচ্ছিক)</label>
-            <input type="url" id="logoUrl" placeholder="https://example.com/logo.png (সরাসরি ছবি লিংক)">
+            <label for="logoUrl">লোগো লিঙ্ক (Logo URL - ঐচ্ছিক)</label>
+            <input type="url" id="logoUrl" placeholder="https://example.com/logo.png">
 
             <label for="status">স্ট্যাটাস:</label>
             <select id="status">
@@ -278,7 +278,7 @@ const adminHtml = `<!DOCTYPE html>
             if (response.ok) {
                 messageDiv.style.color = 'green';
                 messageDiv.innerText = '✅ সফলভাবে ডাটাবেইজে যোগ করা হয়েছে!';
-                viewCertLink.innerHTML = \`<a href="/certificate/\${encodeURIComponent(certVal)}" target="_blank" class="view-btn">📄 সার্টিফিকেট ভিউ ও প্রিন্ট করুন</a>\`;
+                viewCertLink.innerHTML = \`<a href="/certificate/\${encodeURIComponent(certVal)}" target="_blank" class="view-btn">📄 আসল লুকের সার্টিফিকেট দেখুন ও প্রিন্ট করুন</a>\`;
                 viewCertLink.style.display = 'block';
                 addCertificateForm.reset();
             } else if (response.status === 401) {
@@ -313,7 +313,7 @@ app.get('/admin', (req, res) => {
   res.send(adminHtml);
 });
 
-// অফিসিয়াল প্রপোজাল / সার্টিফিকেট ভিউ রাউট (ডাইনামিক লোগো ও সতর্কবার্তাসহ)
+// সার্টিফিকেট ভিউ রাউট (আসল ডকুমেন্টের কালার ও ওয়াটারমার্কসহ)
 app.get('/certificate/:certificate_no', async (req, res) => {
   try {
     await connectDB();
@@ -342,28 +342,34 @@ app.get('/certificate/:certificate_no', async (req, res) => {
       day: 'numeric'
     });
 
-    // লোগো রেন্ডারিং লজিক (লোগো ইউআরএল থাকলে ইমেজ দেখাবে, না থাকলে এম্বলেমিক আইকন)
+    // লোগো রেন্ডারিং
     const topLogoHtml = cert.logo_url
-      ? `<div style="text-align: center; margin-bottom: 12px;"><img src="${cert.logo_url}" alt="Logo" style="max-height: 70px; max-width: 160px; object-fit: contain;"></div>`
+      ? `<div style="text-align: center; margin-bottom: 12px;"><img src="${cert.logo_url}" alt="Logo" style="max-height: 75px; max-width: 170px; object-fit: contain;"></div>`
       : '';
 
     const sealHtml = cert.logo_url
-      ? `<img src="${cert.logo_url}" alt="Seal" style="max-height: 85px; max-width: 85px; object-fit: contain; border-radius: 50%; border: 2px solid #b7791f; padding: 3px;">`
-      : `<div class="official-seal">Official<br>Verified<br>Seal</div>`;
+      ? `<img src="${cert.logo_url}" alt="Seal" style="max-height: 85px; max-width: 85px; object-fit: contain; border-radius: 50%; border: 3px double #c59b27; padding: 4px; background: #fff;">`
+      : `<div class="official-gold-seal">
+            <div class="seal-inner">
+                <span>OFFICIAL</span>
+                <strong>VERIFIED</strong>
+                <span>SEAL</span>
+            </div>
+         </div>`;
 
-    // সতর্কবার্তা / নোটিশ লজিক
+    // সতর্কবার্তা / নোটিশ
     const warningNoticeHtml = cert.custom_notice
       ? `<div class="warning-box">
-            <strong>সতর্কতা / Proprietary Notice:</strong><br>
+            <strong>সতর্কতা / Proprietary Warning Notice:</strong><br>
             ${cert.custom_notice.replace(/\n/g, '<br>')}
          </div>`
       : `<div class="warning-box">
-            <strong>আইনি সতর্কতা / Legal Warning:</strong><br>
-            এই নথিতে উল্লিখিত নাম, লোগো, বা ব্র্যান্ডের স্বত্ব সংরক্ষিত। স্বত্বাধিকারীর পূর্বানুমতি ব্যতিরেকে কোনো ব্যক্তি বা প্রতিষ্ঠান কর্তৃক এর অননুমোদিত ব্যবহার, অনুকরণ বা অপব্যবহার সম্পূর্ণ নিষিদ্ধ ও লঙ্ঘনমূলক আচরণ বলে গণ্য হবে।<br>
-            <em>Unauthorized reproduction, use, or infringement of this trademark and identity is strictly prohibited.</em>
+            <strong>স্বত্ব ও আইনি সতর্কতা / Legal Warning & Notice:</strong><br>
+            এই নথিতে উল্লিখিত নাম, ট্রেডমার্ক ও লোগো স্বত্বাধিকারী কর্তৃক সংরক্ষিত। পূর্বানুমোদন ব্যতিরেকে কোনো ব্যক্তি, প্রতিষ্ঠান বা তৃতীয় পক্ষ কর্তৃক এর অননুমোদিত ব্যবহার, নকল বা অনুকরণ সম্পূর্ণ নিষিদ্ধ এবং আইনগত লঙ্ঘনমূলক আচরণ বলে গণ্য হবে।<br>
+            <em>Unauthorized copying, reproduction, imitation, or misuse of this brand identity is strictly prohibited.</em>
          </div>`;
 
-    const orgHeader = cert.organization_name || 'Official Proposal & Registration Record';
+    const orgHeader = cert.organization_name || 'AUTHENTIC REGISTERED PROPOSAL & RECORD';
 
     const certHtml = `<!DOCTYPE html>
 <html lang="bn">
@@ -372,61 +378,107 @@ app.get('/certificate/:certificate_no', async (req, res) => {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Official Trademark Certificate - ${cert.certificate_no}</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Noto+Serif+Bengali:wght@400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Noto+Serif+Bengali:wght@400;600;700&display=swap');
 
         body {
-            background-color: #555;
+            background-color: #3b4252;
             margin: 0;
-            padding: 20px 0;
+            padding: 25px 0;
             display: flex;
             justify-content: center;
             font-family: 'Noto Serif Bengali', 'SolaimanLipi', 'Kalpurush', Georgia, serif;
         }
+        
+        /* পার্চমেন্ট বা অফ-হোয়াইট ক্লাসিক কাগজের টেক্সচার কালার */
         .page {
             width: 210mm;
             min-height: 297mm;
-            background: #fff;
-            padding: 16mm;
+            background-color: #fbf9f3;
+            background-image: 
+                radial-gradient(#eeddb0 0.75px, transparent 0.75px),
+                radial-gradient(#eeddb0 0.75px, #fbf9f3 0.75px);
+            background-size: 30px 30px;
+            background-position: 0 0, 15px 15px;
+            padding: 14mm;
             box-sizing: border-box;
-            box-shadow: 0 0 15px rgba(0,0,0,0.4);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             position: relative;
+            overflow: hidden;
         }
+
+        /* সূক্ষ্ম ব্যাকগ্রাউন্ড ওয়াটারমার্ক যা আসল ফিল দেয় */
+        .watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            font-size: 80px;
+            font-family: 'Cinzel', serif;
+            font-weight: 900;
+            color: rgba(183, 121, 31, 0.05);
+            text-transform: uppercase;
+            pointer-events: none;
+            letter-spacing: 12px;
+            white-space: nowrap;
+            z-index: 1;
+        }
+
+        /* রয়্যাল নেভি বর্ডার */
         .outer-border {
-            border: 4px solid #1a365d;
-            padding: 6px;
+            border: 5px solid #0f2b46;
+            padding: 5px;
             box-sizing: border-box;
             position: relative;
-            min-height: 100%;
+            z-index: 2;
+            background: rgba(251, 249, 243, 0.94);
         }
+
+        /* গোল্ডেন মেটালিক ইনার বর্ডার */
         .inner-border {
-            border: 2px solid #b7791f;
-            padding: 25px 30px;
+            border: 2px solid #c59b27;
+            outline: 1px dashed #c59b27;
+            outline-offset: -5px;
+            padding: 24px 28px;
             box-sizing: border-box;
             text-align: center;
             position: relative;
         }
+
+        /* কোণার অলঙ্করণ কোড (Corner Accents) */
+        .corner-accent {
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            border: 3px solid #c59b27;
+        }
+        .tl { top: -2px; left: -2px; border-right: none; border-bottom: none; }
+        .tr { top: -2px; right: -2px; border-left: none; border-bottom: none; }
+        .bl { bottom: -2px; left: -2px; border-right: none; border-top: none; }
+        .br { bottom: -2px; right: -2px; border-left: none; border-top: none; }
+
         .header-top {
             font-family: 'Cinzel', serif;
-            letter-spacing: 2px;
-            font-size: 13px;
+            letter-spacing: 3px;
+            font-size: 11.5px;
             color: #718096;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
             text-transform: uppercase;
-            font-weight: bold;
+            font-weight: 800;
         }
         .main-title-bn {
             font-size: 26px;
             font-weight: 700;
-            color: #1a365d;
+            color: #0f2b46;
             margin: 0;
+            letter-spacing: 0.5px;
         }
         .main-title-en {
             font-family: 'Cinzel', serif;
             font-size: 15px;
             font-weight: 700;
             color: #b7791f;
-            letter-spacing: 2px;
-            margin: 5px 0 18px 0;
+            letter-spacing: 2.5px;
+            margin: 4px 0 16px 0;
             text-transform: uppercase;
         }
         .proposal-lead {
@@ -436,43 +488,49 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             margin: 12px 0;
             text-align: justify;
         }
+        
+        /* টেবিলের কালার স্কিম */
         .details-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 18px 0;
+            margin: 16px 0;
             text-align: left;
+            background: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
         .details-table th, .details-table td {
-            border: 1px solid #cbd5e0;
+            border: 1px solid #d2d6dc;
             padding: 9px 12px;
             font-size: 13.5px;
         }
         .details-table th {
-            background-color: #f7fafc;
-            color: #1a365d;
+            background-color: #f1f5f9;
+            color: #0f2b46;
             width: 38%;
             font-weight: 600;
         }
         .status-badge {
             display: inline-block;
-            padding: 2px 8px;
-            background-color: #e6fffa;
-            color: #234e52;
-            border: 1px solid #38b2ac;
+            padding: 2px 10px;
+            background-color: #def7ec;
+            color: #03543f;
+            border: 1px solid #84e1bc;
             border-radius: 4px;
             font-weight: bold;
             font-size: 12.5px;
+            letter-spacing: 0.5px;
         }
         .warning-box {
-            border: 1px solid #e2e8f0;
+            border: 1px solid #fbd38d;
             background-color: #fffaf0;
             border-left: 4px solid #dd6b20;
             padding: 10px 14px;
-            margin-top: 15px;
+            margin-top: 14px;
             text-align: justify;
             font-size: 12px;
-            color: #744210;
+            color: #7b341e;
             line-height: 1.6;
+            border-radius: 2px;
         }
         .statement-text {
             font-size: 12px;
@@ -481,8 +539,45 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             margin-top: 12px;
             text-align: justify;
         }
+        
+        /* গোল্ডেন মেটালিক সিল */
+        .official-gold-seal {
+            width: 82px;
+            height: 82px;
+            background: radial-gradient(circle, #f6e05e, #d69e2e, #b7791f);
+            border-radius: 50%;
+            padding: 3px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2), inset 0 0 4px rgba(255,255,255,0.8);
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .seal-inner {
+            width: 74px;
+            height: 74px;
+            border: 1.5px dashed #744210;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #521b02;
+            font-family: 'Cinzel', serif;
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            line-height: 1.1;
+        }
+        .seal-inner strong {
+            font-size: 10.5px;
+            color: #3b1101;
+            margin: 2px 0;
+            letter-spacing: 1px;
+        }
+
         .footer-section {
-            margin-top: 45px;
+            margin-top: 40px;
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
@@ -501,21 +596,7 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             color: #4a5568;
             font-weight: bold;
         }
-        .official-seal {
-            width: 80px;
-            height: 80px;
-            border: 3px double #b7791f;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #b7791f;
-            font-size: 10px;
-            font-weight: bold;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            margin: 0 auto;
-        }
+        
         .no-print-bar {
             position: fixed;
             top: 12px;
@@ -523,21 +604,29 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             z-index: 1000;
         }
         .print-btn {
-            background-color: #1a365d;
-            color: #fff;
-            border: none;
+            background-color: #0f2b46;
+            color: #ffd700;
+            border: 1px solid #ffd700;
             padding: 10px 18px;
             font-size: 14px;
             font-weight: bold;
             border-radius: 5px;
             cursor: pointer;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.4);
         }
-        .print-btn:hover { background-color: #2b6cb0; }
+        .print-btn:hover { background-color: #1a426c; }
 
         @media print {
             body { background: none; padding: 0; }
-            .page { box-shadow: none; padding: 10mm; width: 100%; height: 100%; }
+            .page { 
+                box-shadow: none; 
+                padding: 10mm; 
+                width: 100%; 
+                height: 100%; 
+                background-color: #fff !important; 
+                background-image: none !important; 
+            }
+            .outer-border { background: #fff !important; }
             .no-print-bar { display: none; }
         }
     </style>
@@ -549,8 +638,15 @@ app.get('/certificate/:certificate_no', async (req, res) => {
 </div>
 
 <div class="page">
+    <div class="watermark">ORIGINAL RECORD</div>
+
     <div class="outer-border">
         <div class="inner-border">
+            <div class="corner-accent tl"></div>
+            <div class="corner-accent tr"></div>
+            <div class="corner-accent bl"></div>
+            <div class="corner-accent br"></div>
+
             ${topLogoHtml}
             <div class="header-top">${orgHeader}</div>
             <h1 class="main-title-bn">ট্রেডমার্ক নিবন্ধন ও ভেরিফিকেশন সনদ</h1>
@@ -572,7 +668,7 @@ app.get('/certificate/:certificate_no', async (req, res) => {
                 </tr>
                 <tr>
                     <th>ট্রেডমার্ক / Trademark Name</th>
-                    <td><strong style="font-size: 16px; color: #1a365d;">${cert.trademark_name}</strong></td>
+                    <td><strong style="font-size: 16px; color: #0f2b46;">${cert.trademark_name}</strong></td>
                 </tr>
                 <tr>
                     <th>স্ট্যাটাস / Current Status</th>
