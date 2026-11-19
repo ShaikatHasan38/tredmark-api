@@ -363,19 +363,19 @@ app.get('/certificate/:certificate_no', async (req, res) => {
     const fullVerifyUrl = protocol + '://' + host + '/certificate/' + encodeURIComponent(cert.certificate_no);
     const qrImageUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=140x140&margin=4&data=' + encodeURIComponent(fullVerifyUrl);
 
-    // কলমের লেখার মতো সাইন (কাস্টম টেক্সট দিলে সেটাই হাতের লেখায় আসবে, না দিলে কলমের স্ট্রোক সাইন দেখাবে)
+    // সূক্ষ্ম ও চিকন কলমের লেখার মতো সাইন
     const verifiedSignatureHtml = cert.verified_by_sign
       ? '<div class="pen-signature">' + cert.verified_by_sign + '</div>'
       : `<svg class="pen-svg" viewBox="0 0 180 45" xmlns="http://www.w3.org/2000/svg">
-           <path d="M15 33 C25 12, 38 10, 42 28 C45 38, 55 18, 72 22 C84 25, 88 35, 106 20 C120 10, 135 28, 158 24" fill="none" stroke="#102a56" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
-           <path d="M32 36 L142 32" fill="none" stroke="#102a56" stroke-width="1.3" stroke-linecap="round" opacity="0.75"/>
+           <path d="M16 32 C26 14, 38 12, 42 28 C45 36, 55 19, 72 22 C84 25, 88 34, 106 21 C120 12, 135 28, 156 24" fill="none" stroke="#102a56" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+           <path d="M35 35 L140 32" fill="none" stroke="#102a56" stroke-width="0.85" stroke-linecap="round" opacity="0.7"/>
          </svg>`;
 
     const authorizedSignatureHtml = cert.authorized_sign
       ? '<div class="pen-signature">' + cert.authorized_sign + '</div>'
       : `<svg class="pen-svg" viewBox="0 0 180 45" xmlns="http://www.w3.org/2000/svg">
-           <path d="M18 29 C32 8, 46 36, 62 18 C74 5, 84 34, 102 22 C116 14, 128 31, 160 19" fill="none" stroke="#102a56" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-           <path d="M68 35 C95 31, 125 32, 152 29" fill="none" stroke="#102a56" stroke-width="1.4" stroke-linecap="round" opacity="0.8"/>
+           <path d="M18 29 C32 10, 46 34, 62 19 C74 8, 84 33, 102 22 C116 15, 128 30, 158 20" fill="none" stroke="#102a56" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+           <path d="M70 35 C96 32, 124 32, 150 30" fill="none" stroke="#102a56" stroke-width="0.85" stroke-linecap="round" opacity="0.75"/>
          </svg>`;
 
     const topLogoHtml = cert.logo_url
@@ -413,7 +413,7 @@ app.get('/certificate/:certificate_no', async (req, res) => {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Official Trademark Certificate - ${cert.certificate_no}</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Cinzel:wght@600;700;800;900&family=Noto+Serif+Bengali:wght@400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;500&family=Cinzel:wght@600;700;800;900&family=Noto+Serif+Bengali:wght@400;600;700&display=swap');
 
         body {
             background-color: #3b4252;
@@ -519,17 +519,17 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             text-align: justify;
         }
         
-        /* কলমের লেখার মতো সার্টিফিকেট নম্বর */
+        /* হালকা ও চিকন কলমের লেখার মতো সার্টিফিকেট নম্বর */
         .handwritten-cert-no {
             font-family: 'Caveat', cursive;
-            font-size: 24px;
-            font-weight: 700;
+            font-size: 19px;
+            font-weight: 400;
             color: #102a56;
-            letter-spacing: 1px;
-            transform: rotate(-1.5deg);
+            letter-spacing: 0.6px;
+            transform: rotate(-1deg);
             display: inline-block;
             border-bottom: 1px dotted #94a3b8;
-            padding: 0 6px 1px 4px;
+            padding: 0 5px 1px 3px;
         }
 
         .details-table {
@@ -661,10 +661,10 @@ app.get('/certificate/:certificate_no', async (req, res) => {
         }
         .pen-signature {
             font-family: 'Caveat', cursive;
-            font-size: 25px;
-            font-weight: 700;
+            font-size: 21px;
+            font-weight: 400;
             color: #102a56;
-            transform: rotate(-3deg);
+            transform: rotate(-2deg);
             line-height: 1;
         }
         .pen-svg {
