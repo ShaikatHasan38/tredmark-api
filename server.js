@@ -65,7 +65,7 @@ function isValidAdminPassword(req) {
   return providedPassword === expectedPassword;
 }
 
-// অ্যাডমিন প্যানেল HTML (সিঙ্গেল ফাইল থেকে সার্ভ করার জন্য)
+// অ্যাডমিন প্যানেল HTML
 const adminHtml = `<!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -73,15 +73,17 @@ const adminHtml = `<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>অ্যাডমিন প্যানেল - ট্রেডমার্ক এন্ট্রি</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px 0; }
-        .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        body { font-family: 'SolaimanLipi', 'Kalpurush', Arial, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px 0; }
+        .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 420px; }
         h2 { text-align: center; color: #333; margin-top: 0; margin-bottom: 20px; }
-        input, select, button { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        input, select, button { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 15px; }
         button { background-color: #28a745; color: white; border: none; cursor: pointer; font-size: 16px; font-weight: bold; }
         button:hover { background-color: #218838; }
         button:disabled { background-color: #6c757d; cursor: not-allowed; }
         .logout-btn { background-color: #dc3545; margin-top: 5px; }
         .logout-btn:hover { background-color: #c82333; }
+        .view-btn { display: inline-block; width: 100%; text-align: center; padding: 10px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px; font-weight: bold; box-sizing: border-box; }
+        .view-btn:hover { background-color: #0056b3; }
         #message, #loginMessage { text-align: center; margin-top: 15px; font-weight: bold; }
     </style>
 </head>
@@ -117,6 +119,7 @@ const adminHtml = `<!DOCTYPE html>
             </select>
 
             <button type="submit" id="submitBtn">ডাটাবেইজে সেভ করুন</button>
+            <div id="viewCertLink" style="display:none;"></div>
             <button type="button" id="logoutBtn" class="logout-btn">লগআউট</button>
         </form>
         <div id="message"></div>
@@ -137,6 +140,7 @@ const adminHtml = `<!DOCTYPE html>
     const submitBtn = document.getElementById('submitBtn');
     const messageDiv = document.getElementById('message');
     const logoutBtn = document.getElementById('logoutBtn');
+    const viewCertLink = document.getElementById('viewCertLink');
 
     function showAdminPanel() {
         loginSection.style.display = 'none';
@@ -215,6 +219,7 @@ const adminHtml = `<!DOCTYPE html>
 
     logoutBtn.addEventListener('click', function() {
         messageDiv.innerText = '';
+        viewCertLink.style.display = 'none';
         adminPasswordInput.value = '';
         showLoginPanel('');
     });
@@ -231,9 +236,11 @@ const adminHtml = `<!DOCTYPE html>
         submitBtn.disabled = true;
         messageDiv.style.color = 'blue';
         messageDiv.innerText = 'ডাটা সেভ হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন...';
+        viewCertLink.style.display = 'none';
 
+        const certVal = document.getElementById('certNo').value.trim();
         const data = {
-            certificate_no: document.getElementById('certNo').value.trim(),
+            certificate_no: certVal,
             owner_name: document.getElementById('ownerName').value.trim(),
             trademark_name: document.getElementById('tmName').value.trim(),
             status: document.getElementById('status').value
@@ -254,6 +261,8 @@ const adminHtml = `<!DOCTYPE html>
             if (response.ok) {
                 messageDiv.style.color = 'green';
                 messageDiv.innerText = '✅ সফলভাবে ডাটাবেইজে যোগ করা হয়েছে!';
+                viewCertLink.innerHTML = \`<a href="/certificate/\${encodeURIComponent(certVal)}" target="_blank" class="view-btn">📄 সার্টিফিকেট ভিউ ও প্রিন্ট করুন</a>\`;
+                viewCertLink.style.display = 'block';
                 addCertificateForm.reset();
             } else if (response.status === 401) {
                 showLoginPanel('❌ ভুল পাসওয়ার্ড! আবার লগইন করুন।', 'red');
@@ -272,7 +281,7 @@ const adminHtml = `<!DOCTYPE html>
 </body>
 </html>`;
 
-// হোম রাউট (API টেস্ট করার জন্য)
+// হোম রাউট
 app.get('/', async (req, res) => {
   try {
     await connectDB();
@@ -285,6 +294,276 @@ app.get('/', async (req, res) => {
 // অ্যাডমিন প্যানেল রাউট
 app.get('/admin', (req, res) => {
   res.send(adminHtml);
+});
+
+// অফিসিয়াল প্রপোজাল / সার্টিফিকেট ভিউ রাউট (দ্বিভাষিক)
+app.get('/certificate/:certificate_no', async (req, res) => {
+  try {
+    await connectDB();
+    const cert = await Trademark.findOne({
+      certificate_no: req.params.certificate_no
+    });
+
+    if (!cert) {
+      return res.status(404).send(`
+        <div style="text-align: center; margin-top: 50px; font-family: Arial, sans-serif;">
+          <h2>❌ সার্টিফিকেট পাওয়া যায়নি / Certificate Not Found</h2>
+          <p>আপনার দেওয়া সার্টিফিকেট নম্বরটি ডাটাবেইজে নেই।</p>
+          <a href="/admin" style="color: #007bff; text-decoration: none;">অ্যাডমিন প্যানেলে ফিরে যান</a>
+        </div>
+      `);
+    }
+
+    const formattedDate = new Date(cert.issue_date).toLocaleDateString('bn-BD', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+    const formattedDateEn = new Date(cert.issue_date).toLocaleDateString('en-GB', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+
+    const certHtml = `<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Official Trademark Certificate - ${cert.certificate_no}</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Noto+Serif+Bengali:wght@400;600;700&display=swap');
+
+        body {
+            background-color: #555;
+            margin: 0;
+            padding: 20px 0;
+            display: flex;
+            justify-content: center;
+            font-family: 'Noto Serif Bengali', 'SolaimanLipi', 'Kalpurush', Georgia, serif;
+        }
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            background: #fff;
+            padding: 20mm;
+            box-sizing: border-box;
+            box-shadow: 0 0 15px rgba(0,0,0,0.4);
+            position: relative;
+        }
+        .outer-border {
+            border: 5px solid #1a365d;
+            padding: 6px;
+            height: calc(100% - 24px);
+            box-sizing: border-box;
+            position: relative;
+        }
+        .inner-border {
+            border: 2px solid #b7791f;
+            padding: 30px;
+            height: calc(100% - 16px);
+            box-sizing: border-box;
+            text-align: center;
+            position: relative;
+        }
+        .header-top {
+            font-family: 'Cinzel', serif;
+            letter-spacing: 2px;
+            font-size: 13px;
+            color: #718096;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+        .main-title-bn {
+            font-size: 26px;
+            font-weight: 700;
+            color: #1a365d;
+            margin: 0;
+        }
+        .main-title-en {
+            font-family: 'Cinzel', serif;
+            font-size: 16px;
+            font-weight: 700;
+            color: #b7791f;
+            letter-spacing: 2px;
+            margin: 6px 0 25px 0;
+            text-transform: uppercase;
+        }
+        .proposal-lead {
+            font-size: 14px;
+            line-height: 1.8;
+            color: #2d3748;
+            margin: 15px 0;
+            text-align: justify;
+            text-justify: inter-word;
+        }
+        .details-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            text-align: left;
+        }
+        .details-table th, .details-table td {
+            border: 1px solid #cbd5e0;
+            padding: 10px 14px;
+            font-size: 14px;
+        }
+        .details-table th {
+            background-color: #f7fafc;
+            color: #1a365d;
+            width: 38%;
+            font-weight: 600;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            background-color: #e6fffa;
+            color: #234e52;
+            border: 1px solid #38b2ac;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .statement-text {
+            font-size: 12.5px;
+            color: #4a5568;
+            line-height: 1.7;
+            margin-top: 15px;
+            text-align: justify;
+        }
+        .footer-section {
+            margin-top: 55px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding: 0 15px;
+        }
+        .sign-box {
+            text-align: center;
+            width: 200px;
+        }
+        .sign-line {
+            border-top: 1.5px solid #2d3748;
+            margin-bottom: 6px;
+        }
+        .sign-title {
+            font-size: 12px;
+            color: #4a5568;
+            font-weight: bold;
+        }
+        .official-seal {
+            width: 90px;
+            height: 90px;
+            border: 3px double #b7791f;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #b7791f;
+            font-size: 10px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin: 0 auto;
+        }
+        .no-print-bar {
+            position: fixed;
+            top: 12px;
+            right: 15px;
+            z-index: 1000;
+        }
+        .print-btn {
+            background-color: #1a365d;
+            color: #fff;
+            border: none;
+            padding: 10px 18px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+        .print-btn:hover { background-color: #2b6cb0; }
+
+        @media print {
+            body { background: none; padding: 0; }
+            .page { box-shadow: none; padding: 15mm; width: 100%; height: 100%; }
+            .no-print-bar { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="no-print-bar">
+    <button class="print-btn" onclick="window.print()">🖨️ প্রিন্ট / PDF সংরক্ষণ করুন</button>
+</div>
+
+<div class="page">
+    <div class="outer-border">
+        <div class="inner-border">
+            <div class="header-top">Official Proposal & Registration Record</div>
+            <h1 class="main-title-bn">ট্রেডমার্ক নিবন্ধন ও ভেরিফিকেশন সনদ</h1>
+            <div class="main-title-en">Certificate of Trademark Registration</div>
+
+            <div class="proposal-lead">
+                এতদ্বারা প্রত্যায়ন ও রেকর্ডভুক্ত করা যাচ্ছে যে, সংশ্লিষ্ট কর্তৃপক্ষের নিয়মাবলী অনুসারে নিম্নবর্ণিত ট্রেডমার্ক ও স্বত্বাধিকারীর বিস্তারিত তথ্য ডাটাবেইজে আনুষ্ঠানিকভাবে যাচাই ও গৃহীত হয়েছে।<br>
+                <em>This is to officially certify and record that the following trademark and ownership particulars have been duly verified and documented in the official register.</em>
+            </div>
+
+            <table class="details-table">
+                <tr>
+                    <th>সার্টিফিকেট নম্বর / Certificate No.</th>
+                    <td><strong>${cert.certificate_no}</strong></td>
+                </tr>
+                <tr>
+                    <th>মালিকের নাম / Owner Name</th>
+                    <td>${cert.owner_name}</td>
+                </tr>
+                <tr>
+                    <th>ট্রেডমার্ক / Trademark Name</th>
+                    <td><strong style="font-size: 16px; color: #1a365d;">${cert.trademark_name}</strong></td>
+                </tr>
+                <tr>
+                    <th>স্ট্যাটাস / Current Status</th>
+                    <td><span class="status-badge">${cert.status}</span></td>
+                </tr>
+                <tr>
+                    <th>ইস্যুর তারিখ / Date of Issuance</th>
+                    <td>${formattedDate} (${formattedDateEn})</td>
+                </tr>
+            </table>
+
+            <div class="statement-text">
+                এই নথিটি একটি সংরক্ষিত অফিশিয়াল রেকর্ড হিসেবে গণ্য হবে। যেকোনো সময় এর বৈধতা যাচাই করতে অনলাইন পোর্টালে সার্টিফিকেট নম্বর দিয়ে অনুসন্ধান করা যাবে।<br>
+                <em>This document serves as an authentic official record. The validity and status can be verified online through the registered portal using the certificate number.</em>
+            </div>
+
+            <div class="footer-section">
+                <div class="sign-box">
+                    <div class="sign-line"></div>
+                    <div class="sign-title">যাচাইকারী কর্মকর্তা<br>Verified By</div>
+                </div>
+
+                <div class="official-seal">
+                    Official<br>Verified<br>Seal
+                </div>
+
+                <div class="sign-box">
+                    <div class="sign-line"></div>
+                    <div class="sign-title">অনুমোদিত স্বাক্ষরকারী<br>Authorized Signatory</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>`;
+
+    res.send(certHtml);
+  } catch (error) {
+    res.status(500).send(`Server Error: ${error.message}`);
+  }
 });
 
 // লগইন পাসওয়ার্ড যাচাই করার API
