@@ -73,7 +73,7 @@ const adminHtml = `<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>অ্যাডমিন প্যানেল - ট্রেডমার্ক এন্ট্রি ও এডিটর</title>
+    <title>অ্যাডমিন প্যানেল - ট্রেডমার্ক এন্ট্রি ও লেবেল শিট</title>
     <style>
         body { font-family: 'SolaimanLipi', 'Kalpurush', Arial, sans-serif; background-color: #f0f3f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 25px 0; }
         .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); width: 100%; max-width: 500px; box-sizing: border-box; }
@@ -105,16 +105,16 @@ const adminHtml = `<!DOCTYPE html>
     </div>
 
     <div id="adminSection" style="display: none;">
-        <h2>ট্রেডমার্ক এন্ট্রি ও কাস্টমাইজেশন</h2>
+        <h2>ট্রেডমার্ক লেবেল শিট এন্ট্রি</h2>
         <form id="addCertificateForm">
             <label for="certNo">সার্টিফিকেট নাম্বার *</label>
-            <input type="text" id="certNo" placeholder="যেমন: TM-58246 বা 193377" required>
+            <input type="text" id="certNo" placeholder="যেমন: TM-58246" required>
 
             <label for="serialNo">সিরিয়াল নং / Serial No. (ঐচ্ছিক)</label>
-            <input type="text" id="serialNo" placeholder="যেমন: 58276 (ফাঁকা রাখলে স্বয়ংক্রিয়ভাবে বসবে)">
+            <input type="text" id="serialNo" placeholder="যেমন: 58276">
 
             <label for="regNo">রেজিস্ট্রেশন নং / Registration No. (ঐচ্ছিক)</label>
-            <input type="text" id="regNo" placeholder="যেমন: REG-58267 (ফাঁকা রাখলে স্বয়ংক্রিয়ভাবে বসবে)">
+            <input type="text" id="regNo" placeholder="যেমন: REG-58267">
 
             <label for="ownerName">মালিকের নাম / স্বত্বাধিকারী *</label>
             <input type="text" id="ownerName" placeholder="যেমন: Shaikat Hasan" required>
@@ -122,13 +122,11 @@ const adminHtml = `<!DOCTYPE html>
             <label for="tmName">ট্রেডমার্ক / ব্র্যান্ডের নাম *</label>
             <input type="text" id="tmName" placeholder="যেমন: Bongodb" required>
 
-            <label for="orgName">প্রতিষ্ঠানের নাম / অথরিটি হেডার (ঐচ্ছিক)</label>
-            <input type="text" id="orgName" placeholder="যেমন: Brand & Trademark Registry Record">
-            <span class="hint-text">ফাঁকা রাখলে ডিফল্ট হেডার ব্যবহৃত হবে।</span>
+            <label for="orgName">প্রতিষ্ঠানের নাম / লেবেল হেডার (ঐচ্ছিক)</label>
+            <input type="text" id="orgName" placeholder="যেমন: Brand & Trademark Label Sheet">
 
             <label for="logoUrl">লোগো লিংক (Logo URL - ঐচ্ছিক)</label>
             <input type="url" id="logoUrl" placeholder="https://example.com/logo.png">
-            <span class="hint-text">সরাসরি ছবির লিংক দিন (.png, .jpg)। পেজের মাঝে বড় লোগো হিসেবে দেখাবে।</span>
 
             <label for="verifiedSign">বাম পাশের সাইন / নাম (Verified By - ঐচ্ছিক)</label>
             <input type="text" id="verifiedSign" placeholder="যেমন: Shaikat Hasan (ফাঁকা রাখলে চিকন কলমের সাইন বসবে)">
@@ -143,9 +141,8 @@ const adminHtml = `<!DOCTYPE html>
                 <option value="Expired">Expired (মেয়াদোত্তীর্ণ)</option>
             </select>
 
-            <label for="customNotice">কাস্টম সতর্কবার্তা / নোট (ঐচ্ছিক):</label>
+            <label for="customNotice">নোট / সতর্কবার্তা (ঐচ্ছিক):</label>
             <textarea id="customNotice" placeholder="নোট বা সতর্কবার্তা লিখুন..."></textarea>
-            <span class="hint-text">ফাঁকা রাখলে সাধারণ স্বত্ব সংরক্ষণ ও নোট প্রদর্শিত হবে।</span>
 
             <button type="submit" id="submitBtn">ডাটাবেইজে সেভ করুন</button>
             <div id="viewCertLink" style="display:none;"></div>
@@ -305,7 +302,7 @@ const adminHtml = `<!DOCTYPE html>
                 if (resData.ok) {
                     messageDiv.style.color = 'green';
                     messageDiv.innerText = '✅ সফলভাবে ডাটাবেইজে যোগ করা হয়েছে!';
-                    viewCertLink.innerHTML = '<a href="/certificate/' + encodeURIComponent(certVal) + '" target="_blank" class="view-btn">📄 সার্টিফিকেট দেখুন ও প্রিন্ট করুন</a>';
+                    viewCertLink.innerHTML = '<a href="/certificate/' + encodeURIComponent(certVal) + '" target="_blank" class="view-btn">📄 লেবেল শিট দেখুন ও প্রিন্ট করুন</a>';
                     viewCertLink.style.display = 'block';
                     addCertificateForm.reset();
                 } else if (resData.status === 401) {
@@ -350,7 +347,7 @@ app.get('/certificate/:certificate_no', async (req, res) => {
     if (!cert) {
       return res.status(404).send(`
         <div style="text-align: center; margin-top: 50px; font-family: Arial, sans-serif;">
-          <h2>❌ সার্টিফিকেট পাওয়া যায়নি / Certificate Not Found</h2>
+          <h2>❌ রেকর্ড পাওয়া যায়নি / Record Not Found</h2>
           <p>আপনার দেওয়া সার্টিফিকেট নম্বরটি ডাটাবেইজে নেই।</p>
           <a href="/admin" style="color: #007bff; text-decoration: none;">অ্যাডমিন প্যানেলে ফিরে যান</a>
         </div>
@@ -376,6 +373,7 @@ app.get('/certificate/:certificate_no', async (req, res) => {
     const fullVerifyUrl = protocol + '://' + host + '/certificate/' + encodeURIComponent(cert.certificate_no);
     const qrImageUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=140x140&margin=4&data=' + encodeURIComponent(fullVerifyUrl);
 
+    // চিকন কলমের লেখার মতো সাইন
     const verifiedSignatureHtml = cert.verified_by_sign
       ? '<div class="pen-signature">' + cert.verified_by_sign + '</div>'
       : `<svg class="pen-svg" viewBox="0 0 180 45" xmlns="http://www.w3.org/2000/svg">
@@ -396,32 +394,20 @@ app.get('/certificate/:certificate_no', async (req, res) => {
          </div>`
       : '';
 
-    const defaultGoldSealHtml = `
-      <div class="official-gold-seal">
-        <div class="seal-inner">
-          <span>OFFICIAL</span>
-          <strong>VERIFIED</strong>
-          <span>SEAL</span>
-        </div>
-      </div>
-    `;
-
     const warningNoticeHtml = cert.custom_notice
-      ? '<div class="warning-box"><strong>নোট ও সতর্কতা / Note & Warning:</strong><br>' + cert.custom_notice.replace(/\n/g, '<br>') + '</div>'
+      ? '<div class="warning-box"><strong>নোট / Note:</strong> ' + cert.custom_notice.replace(/\n/g, '<br>') + '</div>'
       : `<div class="warning-box">
-            <strong>স্বত্ব ও নোট / Proprietary Note:</strong><br>
-            এই নথিতে উল্লিখিত ট্রেডমার্ক চিহ্ন ও স্বত্ব স্বত্বাধিকারীর অনুকূলে সংরক্ষিত। অনুমতি ব্যতিরেকে এর অননুমোদিত ব্যবহার, নকল বা অনুকরণ নিষিদ্ধ। মালিকানা বা নিবন্ধন সংক্রান্ত কোনো পরিবর্তন হলে যথাযথ রেজিস্ট্রি আপডেট গ্রহণ করতে হবে।<br>
-            <em>Rights in this trademark representation are reserved to the proprietor. Unauthorized reproduction or infringement is prohibited; any change of ownership or details should be duly recorded.</em>
+            <strong>নোট / Note:</strong> এই লেবেল শিটে সংরক্ষিত ট্রেডমার্ক ও স্বত্বাধিকারীর তথ্য রেজিস্ট্রি রেকর্ড অনুযায়ী নির্ধারিত। অননুমোদিত ব্যবহার নিষিদ্ধ এবং তথ্যের কোনো পরিবর্তনে যথাযথ আপডেট আবশ্যক।
          </div>`;
 
-    const orgHeader = cert.organization_name || 'BRAND & TRADEMARK REGISTRY RECORD';
+    const orgHeader = cert.organization_name || 'BRAND & TRADEMARK LABEL SHEET';
 
     const certHtml = `<!DOCTYPE html>
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Certificate of Registration of Trademark - ${cert.certificate_no}</title>
+    <title>Trademark Label Sheet - ${cert.certificate_no}</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;500&family=Cinzel:wght@600;700;800;900&family=Noto+Serif+Bengali:wght@400;600;700&display=swap');
 
@@ -479,7 +465,7 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             border: 2px solid #c59b27;
             outline: 1px dashed #c59b27;
             outline-offset: -5px;
-            padding: 20px 26px;
+            padding: 22px 26px;
             box-sizing: border-box;
             text-align: center;
             position: relative;
@@ -500,7 +486,7 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             display: flex;
             justify-content: space-between;
             align-items: baseline;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             font-size: 12px;
             color: #2d3748;
             font-weight: 600;
@@ -538,7 +524,7 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             font-weight: 700;
             color: #b7791f;
             letter-spacing: 2px;
-            margin: 4px 0 12px 0;
+            margin: 4px 0 14px 0;
             text-transform: uppercase;
         }
 
@@ -549,7 +535,7 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             border-top: 1px solid #d2d6dc;
             border-bottom: 1px solid #d2d6dc;
             padding: 7px 4px;
-            margin: 10px 0 12px 0;
+            margin: 10px 0 14px 0;
             font-size: 13px;
             color: #0f2b46;
             font-weight: 600;
@@ -562,19 +548,20 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             letter-spacing: 0.5px;
         }
 
-        .proposal-lead {
-            font-size: 13.3px;
-            line-height: 1.65;
-            color: #2d3748;
-            margin: 10px 0;
-            text-align: justify;
+        /* লেবেল শিটের মূল কার্ড/ব্লক */
+        .label-sheet-grid {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 16px;
+            align-items: center;
+            margin: 14px 0;
         }
 
         .center-logo-box {
-            margin: 16px auto;
+            margin: 14px auto;
             padding: 12px 20px;
             max-width: 260px;
-            background: rgba(255, 255, 255, 0.75);
+            background: rgba(255, 255, 255, 0.8);
             border: 1px solid #e2e8f0;
             border-radius: 6px;
             display: flex;
@@ -591,15 +578,14 @@ app.get('/certificate/:certificate_no', async (req, res) => {
         .details-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 12px 0;
             text-align: left;
             background: #fff;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
         .details-table th, .details-table td {
             border: 1px solid #d2d6dc;
-            padding: 7.5px 12px;
-            font-size: 13px;
+            padding: 8.5px 12px;
+            font-size: 13.5px;
         }
         .details-table th {
             background-color: #f1f5f9;
@@ -615,101 +601,49 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             border: 1px solid #84e1bc;
             border-radius: 4px;
             font-weight: bold;
-            font-size: 12px;
+            font-size: 12.5px;
         }
 
         .warning-box {
             border: 1px solid #fbd38d;
             background-color: #fffaf0;
             border-left: 4px solid #dd6b20;
-            padding: 8.5px 12px;
-            margin-top: 10px;
+            padding: 9px 13px;
+            margin-top: 12px;
             text-align: justify;
-            font-size: 11.5px;
+            font-size: 12px;
             color: #7b341e;
-            line-height: 1.5;
+            line-height: 1.55;
             border-radius: 2px;
         }
 
-        .bottom-meta-row {
-            margin-top: 14px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-        }
-        .statement-text {
-            flex: 1;
-            font-size: 11.5px;
-            color: #4a5568;
-            line-height: 1.5;
-            text-align: justify;
-        }
         .qr-box {
             text-align: center;
             background: #fff;
             border: 1.5px solid #975a16;
-            padding: 4px;
+            padding: 5px;
             border-radius: 4px;
             flex-shrink: 0;
         }
         .qr-box img {
             display: block;
-            width: 76px;
-            height: 76px;
-        }
-
-        .official-gold-seal {
-            width: 82px;
-            height: 82px;
-            background: radial-gradient(circle, #d69e2e, #975a16, #744210);
-            border: 2px solid #521b02;
-            border-radius: 50%;
-            padding: 3px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.32), inset 0 0 5px rgba(255,235,170,0.55);
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-sizing: border-box;
-        }
-        .seal-inner {
-            width: 72px;
-            height: 72px;
-            border: 1.5px dashed #ffecb3;
-            border-radius: 50%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: #fff8dc;
-            font-family: 'Cinzel', serif;
-            font-size: 8.8px;
-            font-weight: 800;
-            letter-spacing: 0.6px;
-            line-height: 1.15;
-            text-shadow: 0 1px 1px rgba(0,0,0,0.5);
-        }
-        .seal-inner strong {
-            font-size: 10px;
-            color: #ffffff;
-            margin: 2px 0;
-            letter-spacing: 0.9px;
+            width: 92px;
+            height: 92px;
         }
 
         .footer-section {
-            margin-top: 24px;
+            margin-top: 34px;
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
-            padding: 0 8px;
+            padding: 0 16px;
         }
         .sign-box {
             text-align: center;
-            width: 180px;
+            width: 195px;
         }
         .sign-space {
-            height: 38px;
+            height: 40px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -724,7 +658,7 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             line-height: 1;
         }
         .pen-svg {
-            width: 150px;
+            width: 155px;
             height: 36px;
             display: block;
         }
@@ -733,7 +667,7 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             margin-bottom: 5px;
         }
         .sign-title {
-            font-size: 11.8px;
+            font-size: 12px;
             color: #4a5568;
             font-weight: bold;
         }
@@ -779,7 +713,7 @@ app.get('/certificate/:certificate_no', async (req, res) => {
 </div>
 
 <div class="page">
-    <div class="watermark">ORIGINAL RECORD</div>
+    <div class="watermark">LABEL RECORD</div>
 
     <div class="outer-border">
         <div class="inner-border">
@@ -789,74 +723,61 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             <div class="corner-accent br"></div>
 
             <div class="top-meta-row">
-                <span>RECORD REF: <strong>${cert.certificate_no}</strong></span>
+                <span>LABEL ID: <strong>${cert.certificate_no}</strong></span>
                 <span>সিরিয়াল নং / Serial No.: <span class="handwritten-serial-no">${displaySerialNo}</span></span>
             </div>
 
             <div class="header-top">${orgHeader}</div>
-            <h1 class="main-title-bn">ট্রেডমার্ক নিবন্ধন ও ভেরিফিকেশন সনদ</h1>
-            <div class="main-title-en">Certificate of Registration of Trademark</div>
+            <h1 class="main-title-bn">ট্রেডমার্ক লেবেল ও রেজিস্ট্রি শিট</h1>
+            <div class="main-title-en">Trademark Label & Registry Sheet</div>
 
             <div class="ref-date-bar">
-                <span>রেজিস্ট্রেশন নং / Trademark No.: <span class="handwritten-inline-no">${displayRegNo}</span></span>
+                <span>রেজিস্ট্রেশন নং / Reg. No.: <span class="handwritten-inline-no">${displayRegNo}</span></span>
                 <span>তারিখ / Date: <strong>${formattedDateEn}</strong></span>
-            </div>
-
-            <div class="proposal-lead">
-                এতদ্বারা প্রত্যায়ন করা যাচ্ছে যে, যে ট্রেডমার্কের নিবন্ধন ও প্রতিনিধিত্ব এই নথির সাথে সংযুক্ত রয়েছে, তা <strong>${cert.owner_name}</strong>-এর নামে <strong>${cert.trademark_name}</strong> ট্রেডমার্ক হিসেবে রেজিস্ট্রেশন নং <strong>${displayRegNo}</strong> এবং সার্টিফিকেট নং <strong>${cert.certificate_no}</strong>-এর অধীনে <strong>${formattedDateEn}</strong> তারিখের প্রেক্ষিতে নিবন্ধন ও রেকর্ডভুক্ত করা হয়েছে।<br>
-                <em>Certified that the Trademark of which a representation is annexed hereto has been registered in the name of <strong>${cert.owner_name}</strong> for the mark <strong>${cert.trademark_name}</strong> under Registration No. <strong>${displayRegNo}</strong> (Certificate No. <strong>${cert.certificate_no}</strong>) as of the date <strong>${formattedDateEn}</strong>.</em>
             </div>
 
             ${centerLogoHtml}
 
-            <table class="details-table">
-                <tr>
-                    <th>সার্টিফিকেট নম্বর / Certificate No.</th>
-                    <td><span class="handwritten-inline-no">${cert.certificate_no}</span></td>
-                </tr>
-                <tr>
-                    <th>রেজিস্ট্রেশন নং / Registration No.</th>
-                    <td><strong>${displayRegNo}</strong></td>
-                </tr>
-                <tr>
-                    <th>মালিকের নাম / Owner Name</th>
-                    <td>${cert.owner_name}</td>
-                </tr>
-                <tr>
-                    <th>ট্রেডমার্ক / Trademark Name</th>
-                    <td><strong style="color: #0f2b46;">${cert.trademark_name}</strong></td>
-                </tr>
-                <tr>
-                    <th>স্ট্যাটাস / Current Status</th>
-                    <td><span class="status-badge">${cert.status}</span></td>
-                </tr>
-                <tr>
-                    <th>ইস্যুর তারিখ / Date of Issuance</th>
-                    <td>${formattedDate} (${formattedDateEn})</td>
-                </tr>
-            </table>
+            <div class="label-sheet-grid">
+                <table class="details-table">
+                    <tr>
+                        <th>সার্টিফিকেট নম্বর / Certificate No.</th>
+                        <td><span class="handwritten-inline-no">${cert.certificate_no}</span></td>
+                    </tr>
+                    <tr>
+                        <th>রেজিস্ট্রেশন নং / Registration No.</th>
+                        <td><strong>${displayRegNo}</strong></td>
+                    </tr>
+                    <tr>
+                        <th>মালিকের নাম / Owner Name</th>
+                        <td>${cert.owner_name}</td>
+                    </tr>
+                    <tr>
+                        <th>ট্রেডমার্ক / Trademark Name</th>
+                        <td><strong style="font-size: 16px; color: #0f2b46;">${cert.trademark_name}</strong></td>
+                    </tr>
+                    <tr>
+                        <th>স্ট্যাটাস / Current Status</th>
+                        <td><span class="status-badge">${cert.status}</span></td>
+                    </tr>
+                    <tr>
+                        <th>ইস্যুর তারিখ / Date of Issuance</th>
+                        <td>${formattedDate} (${formattedDateEn})</td>
+                    </tr>
+                </table>
 
-            ${warningNoticeHtml}
-
-            <div class="bottom-meta-row">
-                <div class="statement-text">
-                    এই নিবন্ধনটি সংরক্ষিত রেজিস্ট্রি রেকর্ড অনুযায়ী বৈধ ও নবায়নযোগ্য হিসেবে বিবেচিত হবে এবং সার্টিফিকেট নম্বর বা QR কোড স্ক্যানের মাধ্যমে যেকোনো সময় অনলাইনে যাচাই করা যাবে।<br>
-                    <em>This registration is recorded in the register subject to applicable renewal terms and may be verified anytime online via the certificate number or QR code.</em>
-                </div>
                 <div class="qr-box">
                     <img src="${qrImageUrl}" alt="Verification QR Code" onerror="this.parentElement.style.display='none';">
                 </div>
             </div>
+
+            ${warningNoticeHtml}
 
             <div class="footer-section">
                 <div class="sign-box">
                     <div class="sign-space">${verifiedSignatureHtml}</div>
                     <div class="sign-line"></div>
                     <div class="sign-title">যাচাইকারী কর্মকর্তা<br>Verified By</div>
-                </div>
-
-                <div style="text-align: center;">
-                    ${defaultGoldSealHtml}
                 </div>
 
                 <div class="sign-box">
