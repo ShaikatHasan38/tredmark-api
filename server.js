@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const path = require('path');
 
 const app = express();
 
@@ -55,7 +56,7 @@ const trademarkSchema = new mongoose.Schema({
 
 const Trademark = mongoose.model('Trademark', trademarkSchema);
 
-// হোম রাউট (টেস্ট করার জন্য)
+// হোম রাউট (API টেস্ট করার জন্য)
 app.get('/', async (req, res) => {
   try {
     await connectDB();
@@ -63,6 +64,11 @@ app.get('/', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
+});
+
+// অ্যাডমিন প্যানেল রাউট
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // নতুন সার্টিফিকেট অ্যাড করার API
@@ -74,7 +80,7 @@ app.post('/api/add-certificate', async (req, res) => {
     res.status(201).json({ message: 'Certificate saved successfully', data: newCertificate });
   } catch (error) {
     if (error.code === 11000) {
-      return res.status(409).json({ error: 'এই সার্টিফিকেট নম্বরটি আগে থেকেই রয়েছে' });
+      return res.status(409).json({ error: 'এই সার্টিফিকেট নম্বরটি আগে থেকেই রয়েছে' });
     }
     res.status(500).json({ error: error.message });
   }
