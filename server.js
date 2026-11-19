@@ -50,6 +50,8 @@ const trademarkSchema = new mongoose.Schema({
   organization_name: { type: String, default: '' },
   logo_url: { type: String, default: '' },
   custom_notice: { type: String, default: '' },
+  verified_by_sign: { type: String, default: '' },
+  authorized_sign: { type: String, default: '' },
   issue_date: { type: Date, default: Date.now }
 });
 
@@ -119,6 +121,12 @@ const adminHtml = `<!DOCTYPE html>
             <label for="logoUrl">লোগো লিংক (Logo URL - ঐচ্ছিক)</label>
             <input type="url" id="logoUrl" placeholder="https://example.com/logo.png">
             <span class="hint-text">সরাসরি ছবির লিংক দিন (.png, .jpg)। না থাকলে ফাঁকা রাখুন, স্বয়ংক্রিয়ভাবে আসল সিল ব্যবহৃত হবে।</span>
+
+            <label for="verifiedSign">যাচাইকারীর সাইন / নাম (Verified By - ঐচ্ছিক)</label>
+            <input type="text" id="verifiedSign" placeholder="যেমন: Shaikat Hasan (ফাঁকা রাখলে ডিফল্ট সাইন বসবে)">
+
+            <label for="authSign">অনুমোদিত স্বাক্ষর (Authorized Sign - ঐচ্ছিক)</label>
+            <input type="text" id="authSign" placeholder="যেমন: Registrar (ফাঁকা রাখলে ডিফল্ট সাইন বসবে)">
 
             <label for="status">স্ট্যাটাস:</label>
             <select id="status">
@@ -265,6 +273,8 @@ const adminHtml = `<!DOCTYPE html>
             status: document.getElementById('status').value,
             organization_name: document.getElementById('orgName').value.trim(),
             logo_url: document.getElementById('logoUrl').value.trim(),
+            verified_by_sign: document.getElementById('verifiedSign').value.trim(),
+            authorized_sign: document.getElementById('authSign').value.trim(),
             custom_notice: document.getElementById('customNotice').value.trim()
         };
 
@@ -353,6 +363,21 @@ app.get('/certificate/:certificate_no', async (req, res) => {
     const fullVerifyUrl = protocol + '://' + host + '/certificate/' + encodeURIComponent(cert.certificate_no);
     const qrImageUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=140x140&margin=4&data=' + encodeURIComponent(fullVerifyUrl);
 
+    // কলমের লেখার মতো সাইন (কাস্টম টেক্সট দিলে সেটাই হাতের লেখায় আসবে, না দিলে কলমের স্ট্রোক সাইন দেখাবে)
+    const verifiedSignatureHtml = cert.verified_by_sign
+      ? '<div class="pen-signature">' + cert.verified_by_sign + '</div>'
+      : `<svg class="pen-svg" viewBox="0 0 180 45" xmlns="http://www.w3.org/2000/svg">
+           <path d="M15 33 C25 12, 38 10, 42 28 C45 38, 55 18, 72 22 C84 25, 88 35, 106 20 C120 10, 135 28, 158 24" fill="none" stroke="#102a56" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+           <path d="M32 36 L142 32" fill="none" stroke="#102a56" stroke-width="1.3" stroke-linecap="round" opacity="0.75"/>
+         </svg>`;
+
+    const authorizedSignatureHtml = cert.authorized_sign
+      ? '<div class="pen-signature">' + cert.authorized_sign + '</div>'
+      : `<svg class="pen-svg" viewBox="0 0 180 45" xmlns="http://www.w3.org/2000/svg">
+           <path d="M18 29 C32 8, 46 36, 62 18 C74 5, 84 34, 102 22 C116 14, 128 31, 160 19" fill="none" stroke="#102a56" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+           <path d="M68 35 C95 31, 125 32, 152 29" fill="none" stroke="#102a56" stroke-width="1.4" stroke-linecap="round" opacity="0.8"/>
+         </svg>`;
+
     const topLogoHtml = cert.logo_url
       ? '<div style="text-align: center; margin-bottom: 10px;"><img src="' + cert.logo_url + '" alt="Logo" style="max-height: 70px; max-width: 160px; object-fit: contain;" onerror="this.style.display=\'none\';"></div>'
       : '';
@@ -368,7 +393,7 @@ app.get('/certificate/:certificate_no', async (req, res) => {
     `;
 
     const bottomSealHtml = cert.logo_url
-      ? '<div style="position: relative; display: inline-block;"><img src="' + cert.logo_url + '" alt="Seal" style="max-height: 82px; max-width: 82px; object-fit: contain; border-radius: 50%; border: 3px double #975a16; padding: 3px; background: #fff;" onerror="this.style.display=\'none\'; document.getElementById(\'fallback-seal\').style.display=\'flex\';"><div id="fallback-seal" style="display: none;">' + defaultGoldSealHtml + '</div></div>'
+      ? '<div style="position: relative; display: inline-block;"><img src="' + cert.logo_url + '" alt="Seal" style="max-height: 84px; max-width: 84px; object-fit: contain; border-radius: 50%; border: 3px double #975a16; padding: 3px; background: #fff;" onerror="this.style.display=\'none\'; document.getElementById(\'fallback-seal\').style.display=\'flex\';"><div id="fallback-seal" style="display: none;">' + defaultGoldSealHtml + '</div></div>'
       : defaultGoldSealHtml;
 
     const warningNoticeHtml = cert.custom_notice
@@ -388,7 +413,7 @@ app.get('/certificate/:certificate_no', async (req, res) => {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Official Trademark Certificate - ${cert.certificate_no}</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Noto+Serif+Bengali:wght@400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Cinzel:wght@600;700;800;900&family=Noto+Serif+Bengali:wght@400;600;700&display=swap');
 
         body {
             background-color: #3b4252;
@@ -494,6 +519,19 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             text-align: justify;
         }
         
+        /* কলমের লেখার মতো সার্টিফিকেট নম্বর */
+        .handwritten-cert-no {
+            font-family: 'Caveat', cursive;
+            font-size: 24px;
+            font-weight: 700;
+            color: #102a56;
+            letter-spacing: 1px;
+            transform: rotate(-1.5deg);
+            display: inline-block;
+            border-bottom: 1px dotted #94a3b8;
+            padding: 0 6px 1px 4px;
+        }
+
         .details-table {
             width: 100%;
             border-collapse: collapse;
@@ -544,7 +582,6 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             text-align: justify;
         }
 
-        /* শুধু পরিচ্ছন্ন QR কোড বক্স */
         .qr-only-row {
             margin-top: 14px;
             display: flex;
@@ -566,7 +603,6 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             height: 80px;
         }
 
-        /* আরও গাঢ় ও স্পষ্ট গোল্ডেন সিল */
         .official-gold-seal {
             width: 84px;
             height: 84px;
@@ -614,7 +650,27 @@ app.get('/certificate/:certificate_no', async (req, res) => {
         }
         .sign-box {
             text-align: center;
-            width: 175px;
+            width: 180px;
+        }
+        .sign-space {
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 3px;
+        }
+        .pen-signature {
+            font-family: 'Caveat', cursive;
+            font-size: 25px;
+            font-weight: 700;
+            color: #102a56;
+            transform: rotate(-3deg);
+            line-height: 1;
+        }
+        .pen-svg {
+            width: 155px;
+            height: 38px;
+            display: block;
         }
         .sign-line {
             border-top: 1.5px solid #2d3748;
@@ -689,7 +745,7 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             <table class="details-table">
                 <tr>
                     <th>সার্টিফিকেট নম্বর / Certificate No.</th>
-                    <td><strong>${cert.certificate_no}</strong></td>
+                    <td><span class="handwritten-cert-no">${cert.certificate_no}</span></td>
                 </tr>
                 <tr>
                     <th>মালিকের নাম / Owner Name</th>
@@ -724,6 +780,7 @@ app.get('/certificate/:certificate_no', async (req, res) => {
 
             <div class="footer-section">
                 <div class="sign-box">
+                    <div class="sign-space">${verifiedSignatureHtml}</div>
                     <div class="sign-line"></div>
                     <div class="sign-title">যাচাইকারী কর্মকর্তা<br>Verified By</div>
                 </div>
@@ -733,6 +790,7 @@ app.get('/certificate/:certificate_no', async (req, res) => {
                 </div>
 
                 <div class="sign-box">
+                    <div class="sign-space">${authorizedSignatureHtml}</div>
                     <div class="sign-line"></div>
                     <div class="sign-title">অনুমোদিত স্বাক্ষরকারী<br>Authorized Signatory</div>
                 </div>
@@ -781,6 +839,8 @@ app.post('/api/add-certificate', async (req, res) => {
       status,
       organization_name,
       logo_url,
+      verified_by_sign,
+      authorized_sign,
       custom_notice
     } = req.body;
 
@@ -791,6 +851,8 @@ app.post('/api/add-certificate', async (req, res) => {
       status,
       organization_name,
       logo_url,
+      verified_by_sign,
+      authorized_sign,
       custom_notice
     });
 
