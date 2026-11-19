@@ -5,7 +5,6 @@ const cors = require('cors');
 
 const app = express();
 
-// ফাইল আপলোডের সুবিধার্থে রিকোয়েস্ট সাইজ লিমিট বাড়ানো হয়েছে (15MB পর্যন্ত)
 app.use(express.json({ limit: '15mb' }));
 app.use(express.urlencoded({ limit: '15mb', extended: true }));
 app.use(cors());
@@ -56,18 +55,9 @@ function escapeHtml(value) {
 
 const trademarkSchema = new mongoose.Schema({
   certificate_no: { type: String, required: true, unique: true },
-  serial_no: { type: String, default: '' },
-  registration_no: { type: String, default: '' },
-  owner_name: { type: String, required: true },
   trademark_name: { type: String, required: true },
-  status: { type: String, default: 'Active' },
-  organization_name: { type: String, default: '' },
-  logo_url: { type: String, default: '' },
-  document_file: { type: String, default: '' },      // আপলোড করা ফাইলের Base64 ডেটা
-  document_mime_type: { type: String, default: '' }, // ফাইলের টাইপ (e.g. image/png, application/pdf)
-  custom_notice: { type: String, default: '' },
-  verified_by_sign: { type: String, default: '' },
-  authorized_sign: { type: String, default: '' },
+  document_file: { type: String, default: '' },
+  document_mime_type: { type: String, default: '' },
   issue_date: { type: Date, default: Date.now }
 });
 
@@ -87,24 +77,22 @@ const adminHtml = `<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - Trademark Entry & File Upload</title>
+    <title>Admin Panel - Trademark Upload</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f0f3f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 25px 0; }
-        .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); width: 100%; max-width: 520px; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background-color: #f0f3f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+        .container { background: white; padding: 28px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); width: 100%; max-width: 440px; box-sizing: border-box; }
         h2 { text-align: center; color: #1a365d; margin-top: 0; margin-bottom: 20px; }
-        label { font-weight: bold; font-size: 13.5px; color: #2d3748; display: block; margin-top: 10px; }
-        input, select, textarea, button { width: 100%; padding: 10px; margin: 6px 0 6px 0; border: 1px solid #cbd5e0; border-radius: 5px; box-sizing: border-box; font-size: 14.5px; font-family: inherit; }
-        .hint-text { font-size: 11.5px; color: #718096; margin-bottom: 8px; display: block; }
-        textarea { resize: vertical; min-height: 80px; }
-        .file-input-box { background: #f8fafc; border: 1.5px dashed #cbd5e0; padding: 12px; border-radius: 6px; margin: 6px 0; }
-        button { background-color: #1a365d; color: white; border: none; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 12px; }
+        label { font-weight: bold; font-size: 14px; color: #2d3748; display: block; margin-top: 12px; }
+        input, button { width: 100%; padding: 10px; margin: 6px 0; border: 1px solid #cbd5e0; border-radius: 5px; box-sizing: border-box; font-size: 14.5px; font-family: inherit; }
+        .file-box { background: #f8fafc; border: 1.5px dashed #cbd5e0; padding: 12px; border-radius: 6px; margin-top: 8px; }
+        button { background-color: #1a365d; color: white; border: none; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 16px; }
         button:hover { background-color: #2b6cb0; }
         button:disabled { background-color: #a0aec0; cursor: not-allowed; }
         .logout-btn { background-color: #e53e3e; margin-top: 8px; }
         .logout-btn:hover { background-color: #c53030; }
-        .view-btn { display: inline-block; width: 100%; text-align: center; padding: 10px; background-color: #b7791f; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px; font-weight: bold; box-sizing: border-box; }
+        .view-btn { display: inline-block; width: 100%; text-align: center; padding: 10px; background-color: #b7791f; color: white; text-decoration: none; border-radius: 5px; margin-top: 12px; font-weight: bold; box-sizing: border-box; }
         .view-btn:hover { background-color: #975a16; }
-        #message, #loginMessage { text-align: center; margin-top: 15px; font-weight: bold; }
+        #message, #loginMessage { text-align: center; margin-top: 14px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -112,7 +100,7 @@ const adminHtml = `<!DOCTYPE html>
     <div id="loginSection">
         <h2>Admin Login</h2>
         <form id="loginForm">
-            <label for="adminPassword">Admin Password:</label>
+            <label for="adminPassword">Admin Password</label>
             <input type="password" id="adminPassword" placeholder="Enter admin password" required>
             <button type="submit" id="loginBtn">Login</button>
         </form>
@@ -120,53 +108,20 @@ const adminHtml = `<!DOCTYPE html>
     </div>
 
     <div id="adminSection" style="display: none;">
-        <h2>Trademark Record & Document Upload</h2>
+        <h2>Upload Trademark Certificate</h2>
         <form id="addCertificateForm">
-            <label for="certNo">Certificate Number *</label>
-            <input type="text" id="certNo" placeholder="e.g. TM-7674" required>
-
-            <label for="serialNo">Serial No. (Optional)</label>
-            <input type="text" id="serialNo" placeholder="e.g. 57266">
-
-            <label for="regNo">Registration / Trademark No. (Optional)</label>
-            <input type="text" id="regNo" placeholder="e.g. 193376">
-
-            <label for="ownerName">Proprietor / Owner Name *</label>
-            <input type="text" id="ownerName" placeholder="e.g. Shaikat Hasan" required>
+            <label for="certNo">Trademark Number *</label>
+            <input type="text" id="certNo" placeholder="e.g. 193376 or TM-101" required>
 
             <label for="tmName">Trademark Name *</label>
             <input type="text" id="tmName" placeholder="e.g. Bongodb" required>
 
-            <label for="orgName">Registry Header / Authority Name (Optional)</label>
-            <input type="text" id="orgName" placeholder="e.g. Brand & Trademark Registry Record">
-
-            <div class="file-input-box">
-                <label for="certFile" style="margin-top:0;">Upload Original Certificate File (Image / PDF):</label>
-                <input type="file" id="certFile" accept="image/*,application/pdf">
-                <span class="hint-text">Select your original scanned certificate (PNG, JPG, PDF). It will be saved directly into the database.</span>
+            <div class="file-box">
+                <label for="certFile" style="margin-top:0;">Choose File (Certificate Image / PDF) *</label>
+                <input type="file" id="certFile" accept="image/*,application/pdf" required>
             </div>
 
-            <label for="logoUrl">Or Logo URL (Optional fallback)</label>
-            <input type="url" id="logoUrl" placeholder="https://example.com/logo.png">
-
-            <label for="verifiedSign">Verified By Signature / Name (Optional)</label>
-            <input type="text" id="verifiedSign" placeholder="Leave blank for thin pen signature">
-
-            <label for="authSign">Authorized Signatory Name (Optional)</label>
-            <input type="text" id="authSign" placeholder="Leave blank for thin pen signature">
-
-            <label for="status">Status:</label>
-            <select id="status">
-                <option value="Active">Active</option>
-                <option value="Pending">Pending</option>
-                <option value="Expired">Expired</option>
-            </select>
-
-            <label for="customNotice">Legal Notice / Terms (Customizable):</label>
-            <textarea id="customNotice" placeholder="Enter legal notice or terms..."></textarea>
-            <span class="hint-text">Leave blank to use the standard trademark legal notice.</span>
-
-            <button type="submit" id="submitBtn">Save & Upload to Database</button>
+            <button type="submit" id="submitBtn">Upload & Save</button>
             <div id="viewCertLink" style="display:none;"></div>
             <button type="button" id="logoutBtn" class="logout-btn">Logout</button>
         </form>
@@ -244,7 +199,7 @@ const adminHtml = `<!DOCTYPE html>
 
         loginBtn.disabled = true;
         loginMessage.style.color = 'blue';
-        loginMessage.innerText = 'Verifying password...';
+        loginMessage.innerText = 'Verifying...';
 
         verifyPassword(enteredPassword)
             .then(function(response) {
@@ -259,12 +214,12 @@ const adminHtml = `<!DOCTYPE html>
                     loginMessage.innerText = '';
                     showAdminPanel();
                 } else {
-                    showLoginPanel((data.result && data.result.error) || 'Invalid password! Please try again.', 'red');
+                    showLoginPanel((data.result && data.result.error) || 'Invalid password!', 'red');
                 }
             })
             .catch(function() {
                 loginMessage.style.color = 'red';
-                loginMessage.innerText = 'Unable to connect to the server!';
+                loginMessage.innerText = 'Connection failed!';
             })
             .finally(function() {
                 loginBtn.disabled = false;
@@ -278,10 +233,44 @@ const adminHtml = `<!DOCTYPE html>
         showLoginPanel('', 'red');
     });
 
-    function readFileAsBase64(file) {
+    function compressImage(file) {
+        return new Promise(function(resolve, reject) {
+            var img = new Image();
+            var reader = new FileReader();
+            reader.onload = function(e) { img.src = e.target.result; };
+            reader.onerror = reject;
+            img.onload = function() {
+                var maxWidth = 1400;
+                var width = img.width;
+                var height = img.height;
+                if (width > maxWidth) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                }
+                var canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                var ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                resolve({ base64: canvas.toDataURL('image/jpeg', 0.8), mimeType: 'image/jpeg' });
+            };
+            img.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function readFile(file) {
         return new Promise(function(resolve, reject) {
             if (!file) {
-                resolve({ base64: '', mimeType: '' });
+                reject(new Error('Please choose a certificate file'));
+                return;
+            }
+            if (file.type && file.type.startsWith('image/')) {
+                compressImage(file).then(resolve).catch(reject);
+                return;
+            }
+            if (file.size > 2.5 * 1024 * 1024) {
+                reject(new Error('PDF file must be under 2.5 MB'));
                 return;
             }
             var reader = new FileReader();
@@ -304,39 +293,28 @@ const adminHtml = `<!DOCTYPE html>
 
         var fileInput = document.getElementById('certFile');
         var selectedFile = fileInput.files && fileInput.files[0];
+        var certVal = document.getElementById('certNo').value.trim();
+        var tmVal = document.getElementById('tmName').value.trim();
 
         submitBtn.disabled = true;
         messageDiv.style.color = 'blue';
-        messageDiv.innerText = 'Reading file & saving record, please wait...';
+        messageDiv.innerText = 'Uploading...';
         viewCertLink.style.display = 'none';
 
-        var certVal = document.getElementById('certNo').value.trim();
-
-        readFileAsBase64(selectedFile)
+        readFile(selectedFile)
             .then(function(fileData) {
-                var payload = {
-                    certificate_no: certVal,
-                    serial_no: document.getElementById('serialNo').value.trim(),
-                    registration_no: document.getElementById('regNo').value.trim(),
-                    owner_name: document.getElementById('ownerName').value.trim(),
-                    trademark_name: document.getElementById('tmName').value.trim(),
-                    status: document.getElementById('status').value,
-                    organization_name: document.getElementById('orgName').value.trim(),
-                    logo_url: document.getElementById('logoUrl').value.trim(),
-                    document_file: fileData.base64,
-                    document_mime_type: fileData.mimeType,
-                    verified_by_sign: document.getElementById('verifiedSign').value.trim(),
-                    authorized_sign: document.getElementById('authSign').value.trim(),
-                    custom_notice: document.getElementById('customNotice').value.trim()
-                };
-
                 return fetch(API_BASE_URL + '/api/add-certificate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'x-admin-password': currentPassword
                     },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({
+                        certificate_no: certVal,
+                        trademark_name: tmVal,
+                        document_file: fileData.base64,
+                        document_mime_type: fileData.mimeType
+                    })
                 });
             })
             .then(function(response) {
@@ -347,20 +325,21 @@ const adminHtml = `<!DOCTYPE html>
             .then(function(resData) {
                 if (resData.ok) {
                     messageDiv.style.color = 'green';
-                    messageDiv.innerText = 'Saved to database successfully!';
-                    viewCertLink.innerHTML = '<a href="/certificate/' + encodeURIComponent(certVal) + '" target="_blank" class="view-btn">View & Share Certificate Link</a>';
+                    messageDiv.innerText = 'Uploaded successfully!';
+                    var certUrl = API_BASE_URL + '/certificate/' + encodeURIComponent(certVal);
+                    viewCertLink.innerHTML = '<a href="/certificate/' + encodeURIComponent(certVal) + '" target="_blank" class="view-btn">Open Protected Link: ' + certUrl + '</a>';
                     viewCertLink.style.display = 'block';
                     addCertificateForm.reset();
                 } else if (resData.status === 401) {
-                    showLoginPanel('Invalid password! Please log in again.', 'red');
+                    showLoginPanel('Invalid password!', 'red');
                 } else {
                     messageDiv.style.color = 'red';
-                    messageDiv.innerText = 'Error: ' + ((resData.result && resData.result.error) || 'Could not save!');
+                    messageDiv.innerText = 'Error: ' + ((resData.result && resData.result.error) || 'Failed to upload');
                 }
             })
             .catch(function(err) {
                 messageDiv.style.color = 'red';
-                messageDiv.innerText = 'Unable to save record: ' + (err.message || 'Network error');
+                messageDiv.innerText = err.message || 'Upload failed';
             })
             .finally(function() {
                 submitBtn.disabled = false;
@@ -392,469 +371,85 @@ app.get('/certificate/:certificate_no', async (req, res) => {
 
     if (!cert) {
       return res.status(404).send(`
-        <div style="text-align: center; margin-top: 50px; font-family: Arial, sans-serif;">
-          <h2>Certificate Not Found</h2>
-          <p>The requested certificate number does not exist in the database.</p>
-          <a href="/admin" style="color: #007bff; text-decoration: none;">Return to Admin Panel</a>
+        <div style="text-align: center; margin-top: 60px; font-family: Arial, sans-serif;">
+          <h2>Trademark Record Not Found</h2>
+          <p>No record found for this trademark number.</p>
         </div>
       `);
     }
 
-    const formattedDateEn = new Date(cert.issue_date).toLocaleDateString('en-GB', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-
     const safeCertNo = escapeHtml(cert.certificate_no);
-    const safeOwnerName = escapeHtml(cert.owner_name);
-    const safeTrademarkName = escapeHtml(cert.trademark_name);
-    const safeStatus = escapeHtml(cert.status);
-    const safeDateEn = escapeHtml(formattedDateEn);
-
-    const rawSerialNo = cert.serial_no || ('SL-' + cert.certificate_no);
-    const rawRegNo = cert.registration_no || ('REG-' + cert.certificate_no);
-    const displaySerialNo = escapeHtml(rawSerialNo);
-    const displayRegNo = escapeHtml(rawRegNo);
+    const safeTmName = escapeHtml(cert.trademark_name);
 
     const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
     const host = req.get('host');
     const fullVerifyUrl = protocol + '://' + host + '/certificate/' + encodeURIComponent(cert.certificate_no);
-    const qrImageUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=140x140&margin=4&data=' + encodeURIComponent(fullVerifyUrl);
+    const qrImageUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=130x130&margin=4&data=' + encodeURIComponent(fullVerifyUrl);
 
-    // আপলোড করা আসল সার্টিফিকেট বা লোগো ডিসপ্লে
-    let documentPreviewHtml = '';
+    let filePreviewHtml = '';
     if (cert.document_file) {
       if (cert.document_mime_type === 'application/pdf') {
-        documentPreviewHtml = `
-          <div class="uploaded-doc-container">
-            <embed src="${cert.document_file}" type="application/pdf" width="100%" height="450px" style="border: 1px solid #cbd5e0; border-radius: 4px;" />
-            <div style="margin-top: 8px;">
-              <a href="${cert.document_file}" download="Trademark-Certificate-${safeCertNo}.pdf" class="doc-download-btn">Download Original Certificate PDF</a>
-            </div>
+        filePreviewHtml = `
+          <div class="doc-box">
+            <embed src="${cert.document_file}" type="application/pdf" width="100%" height="560px" />
           </div>
         `;
       } else {
-        documentPreviewHtml = `
-          <div class="uploaded-doc-container">
-            <img src="${cert.document_file}" alt="Original Certificate" class="uploaded-doc-img">
-            <div style="margin-top: 8px;">
-              <a href="${cert.document_file}" download="Trademark-${safeCertNo}.png" class="doc-download-btn">View / Download Full Document</a>
-            </div>
+        filePreviewHtml = `
+          <div class="doc-box">
+            <img src="${cert.document_file}" alt="${safeTmName}" class="doc-img" />
           </div>
         `;
       }
-    } else if (cert.logo_url) {
-      documentPreviewHtml = `
-        <div class="center-logo-box">
-          <img src="${escapeHtml(cert.logo_url)}" alt="${safeTrademarkName}" onerror="this.parentElement.style.display='none';">
-        </div>
-      `;
     }
 
-    const verifiedSignatureHtml = cert.verified_by_sign
-      ? '<div class="pen-signature">' + escapeHtml(cert.verified_by_sign) + '</div>'
-      : `<svg class="pen-svg" viewBox="0 0 180 45" xmlns="http://www.w3.org/2000/svg">
-           <path d="M16 32 C26 14, 38 12, 42 28 C45 36, 55 19, 72 22 C84 25, 88 34, 106 21 C120 12, 135 28, 156 24" fill="none" stroke="#102a56" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-           <path d="M35 35 L140 32" fill="none" stroke="#102a56" stroke-width="0.8" stroke-linecap="round" opacity="0.7"/>
-         </svg>`;
-
-    const authorizedSignatureHtml = cert.authorized_sign
-      ? '<div class="pen-signature">' + escapeHtml(cert.authorized_sign) + '</div>'
-      : `<svg class="pen-svg" viewBox="0 0 180 45" xmlns="http://www.w3.org/2000/svg">
-           <path d="M18 29 C32 10, 46 34, 62 19 C74 8, 84 33, 102 22 C116 15, 128 30, 158 20" fill="none" stroke="#102a56" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
-           <path d="M70 35 C96 32, 124 32, 150 30" fill="none" stroke="#102a56" stroke-width="0.8" stroke-linecap="round" opacity="0.75"/>
-         </svg>`;
-
-    const legalNoticeHtml = cert.custom_notice
-      ? '<div class="legal-box"><strong>Legal Notice:</strong><br>' + escapeHtml(cert.custom_notice).replace(/\n/g, '<br>') + '</div>'
-      : `<div class="legal-box">
-            <strong>Legal Notice:</strong><br>
-            Registration is given for 7 years, from the above-mentioned date and may then be renewed for a period of 10 years, and also at the expiration of each period of 10 years, thereafter.<br>
-            This certificate is not for use in legal proceeding or for obtaining registration abroad.<br>
-            Note: Upon any change of ownership of this Trade Mark, or change in address, application should at once be made to Registrar for the change.
-         </div>`;
-
-    const orgHeader = escapeHtml(cert.organization_name || 'BRAND & TRADEMARK REGISTRY RECORD');
-
-    const certHtml = `<!DOCTYPE html>
+    const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Certificate of Registration of Trademark - ${safeCertNo}</title>
+    <title>${safeTmName} - Trademark Record (${safeCertNo})</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;500&family=Cinzel:wght@600;700;800;900&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap');
-
-        body {
-            background-color: #3b4252;
-            margin: 0;
-            padding: 25px 0;
-            display: flex;
-            justify-content: center;
-            font-family: 'Cormorant Garamond', Georgia, serif;
-        }
-        
-        .page {
-            width: 210mm;
-            min-height: 297mm;
-            background-color: #fbf9f3;
-            background-image: 
-                radial-gradient(#eeddb0 0.75px, transparent 0.75px),
-                radial-gradient(#eeddb0 0.75px, #fbf9f3 0.75px);
-            background-size: 30px 30px;
-            background-position: 0 0, 15px 15px;
-            padding: 14mm;
-            box-sizing: border-box;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .watermark {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(-30deg);
-            font-size: 75px;
-            font-family: 'Cinzel', serif;
-            font-weight: 900;
-            color: rgba(183, 121, 31, 0.05);
-            text-transform: uppercase;
-            pointer-events: none;
-            letter-spacing: 10px;
-            white-space: nowrap;
-            z-index: 1;
-        }
-
-        .outer-border {
-            border: 5px solid #0f2b46;
-            padding: 5px;
-            box-sizing: border-box;
-            position: relative;
-            z-index: 2;
-            background: rgba(251, 249, 243, 0.94);
-        }
-
-        .inner-border {
-            border: 2px solid #c59b27;
-            outline: 1px dashed #c59b27;
-            outline-offset: -5px;
-            padding: 24px 28px;
-            box-sizing: border-box;
-            text-align: center;
-            position: relative;
-        }
-
-        .corner-accent {
-            position: absolute;
-            width: 18px;
-            height: 18px;
-            border: 3px solid #c59b27;
-        }
-        .tl { top: -2px; left: -2px; border-right: none; border-bottom: none; }
-        .tr { top: -2px; right: -2px; border-left: none; border-bottom: none; }
-        .bl { bottom: -2px; left: -2px; border-right: none; border-top: none; }
-        .br { bottom: -2px; right: -2px; border-left: none; border-top: none; }
-
-        .top-meta-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            margin-bottom: 10px;
-            font-size: 14px;
-            color: #2d3748;
-            font-weight: 600;
-        }
-        .handwritten-serial-no {
-            font-family: 'Caveat', cursive;
-            font-size: 20px;
-            font-weight: 400;
-            color: #102a56;
-            letter-spacing: 0.6px;
-            transform: rotate(-1.2deg);
-            display: inline-block;
-            border-bottom: 1px dotted #94a3b8;
-            padding: 0 6px;
-        }
-
-        .header-top {
-            font-family: 'Cinzel', serif;
-            letter-spacing: 2.5px;
-            font-size: 12px;
-            color: #718096;
-            margin-bottom: 4px;
-            text-transform: uppercase;
-            font-weight: 800;
-        }
-        .main-title-en {
-            font-family: 'Cinzel', serif;
-            font-size: 22px;
-            font-weight: 800;
-            color: #0f2b46;
-            letter-spacing: 1.5px;
-            margin: 6px 0 14px 0;
-            text-transform: uppercase;
-        }
-
-        .sub-meta-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            border-top: 1px solid #d2d6dc;
-            border-bottom: 1px solid #d2d6dc;
-            padding: 6px 4px;
-            margin-bottom: 14px;
-            font-size: 15px;
-            color: #0f2b46;
-            font-weight: 600;
-        }
-
-        .narrative-body {
-            text-align: justify;
-            font-size: 16.5px;
-            line-height: 1.75;
-            color: #1f2937;
-            margin: 14px 0;
-        }
-        .narrative-body p {
-            margin: 10px 0;
-        }
-        .highlight-val {
-            font-weight: 700;
-            color: #0f2b46;
-        }
-        .handwritten-inline-no {
-            font-family: 'Caveat', cursive;
-            font-size: 20px;
-            font-weight: 400;
-            color: #102a56;
-            letter-spacing: 0.5px;
-        }
-
-        .uploaded-doc-container {
-            margin: 16px auto;
-            max-width: 90%;
-            background: #fff;
-            padding: 10px;
-            border: 1px solid #cbd5e0;
-            border-radius: 6px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            text-align: center;
-        }
-        .uploaded-doc-img {
-            max-width: 100%;
-            max-height: 480px;
-            object-fit: contain;
-            display: block;
-            margin: 0 auto;
-        }
-        .doc-download-btn {
-            display: inline-block;
-            background: #1a365d;
-            color: #fff;
-            padding: 6px 14px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-family: Arial, sans-serif;
-            text-decoration: none;
-            font-weight: bold;
-        }
-        .doc-download-btn:hover { background: #2b6cb0; }
-
-        .center-logo-box {
-            margin: 16px auto;
-            padding: 12px 20px;
-            max-width: 260px;
-            background: rgba(255, 255, 255, 0.8);
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .center-logo-box img {
-            max-height: 115px;
-            max-width: 220px;
-            object-fit: contain;
-            display: block;
-        }
-
-        .legal-box {
-            border: 1px solid #fbd38d;
-            background-color: #fffaf0;
-            border-left: 4px solid #dd6b20;
-            padding: 10px 14px;
-            margin-top: 14px;
-            text-align: justify;
-            font-size: 14px;
-            color: #7b341e;
-            line-height: 1.55;
-            border-radius: 2px;
-        }
-
-        .bottom-qr-bar {
-            margin-top: 18px;
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            padding-right: 8px;
-        }
-        .qr-box {
-            text-align: center;
-            background: #fff;
-            border: 1.5px solid #975a16;
-            padding: 4px;
-            border-radius: 4px;
-            flex-shrink: 0;
-        }
-        .qr-box img {
-            display: block;
-            width: 82px;
-            height: 82px;
-        }
-
-        .footer-section {
-            margin-top: 28px;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            padding: 0 16px;
-        }
-        .sign-box {
-            text-align: center;
-            width: 195px;
-        }
-        .sign-space {
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 3px;
-        }
-        .pen-signature {
-            font-family: 'Caveat', cursive;
-            font-size: 20px;
-            font-weight: 400;
-            color: #102a56;
-            transform: rotate(-2deg);
-            line-height: 1;
-        }
-        .pen-svg {
-            width: 155px;
-            height: 36px;
-            display: block;
-        }
-        .sign-line {
-            border-top: 1.5px solid #2d3748;
-            margin-bottom: 5px;
-        }
-        .sign-title {
-            font-size: 14px;
-            color: #4a5568;
-            font-weight: 700;
-        }
-        
-        .no-print-bar {
-            position: fixed;
-            top: 12px;
-            right: 15px;
-            z-index: 1000;
-        }
-        .print-btn {
-            background-color: #0f2b46;
-            color: #ffd700;
-            border: 1px solid #ffd700;
-            padding: 10px 18px;
-            font-size: 14px;
-            font-weight: bold;
-            border-radius: 5px;
-            cursor: pointer;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.4);
-        }
-        .print-btn:hover { background-color: #1a426c; }
-
+        body { background: #1e293b; margin: 0; padding: 24px 12px; font-family: Arial, sans-serif; display: flex; justify-content: center; }
+        .card { background: #fbf9f3; max-width: 820px; width: 100%; border: 4px solid #0f2b46; border-radius: 8px; padding: 24px; box-sizing: border-box; box-shadow: 0 12px 30px rgba(0,0,0,0.45); }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #c59b27; padding-bottom: 12px; margin-bottom: 18px; flex-wrap: wrap; gap: 10px; }
+        .tm-title { margin: 0; color: #0f2b46; font-size: 22px; }
+        .tm-no { color: #b7791f; font-weight: bold; font-size: 15px; }
+        .doc-box { background: #fff; border: 1px solid #cbd5e0; border-radius: 6px; padding: 10px; text-align: center; }
+        .doc-img { max-width: 100%; height: auto; display: block; margin: 0 auto; border-radius: 4px; }
+        .footer-bar { margin-top: 18px; display: flex; justify-content: space-between; align-items: center; gap: 16px; background: #fffaf0; border-left: 4px solid #dd6b20; padding: 12px 14px; border-radius: 4px; font-size: 13px; color: #7b341e; }
+        .qr-img { width: 78px; height: 78px; background: #fff; padding: 4px; border: 1px solid #975a16; border-radius: 4px; display: block; }
+        .print-btn { background: #0f2b46; color: #ffd700; border: 1px solid #ffd700; padding: 8px 14px; border-radius: 5px; cursor: pointer; font-weight: bold; }
         @media print {
-            body { background: none; padding: 0; }
-            .page { 
-                box-shadow: none; 
-                padding: 10mm; 
-                width: 100%; 
-                height: 100%; 
-                background-color: #fff !important; 
-                background-image: none !important; 
-            }
-            .outer-border { background: #fff !important; }
-            .no-print-bar { display: none; }
+            body { background: #fff; padding: 0; }
+            .card { box-shadow: none; border: 2px solid #0f2b46; max-width: 100%; }
+            .print-btn { display: none; }
         }
     </style>
 </head>
 <body>
-
-<div class="no-print-bar">
-    <button class="print-btn" onclick="window.print()">Print / Save PDF</button>
-</div>
-
-<div class="page">
-    <div class="watermark">TRADEMARK RECORD</div>
-
-    <div class="outer-border">
-        <div class="inner-border">
-            <div class="corner-accent tl"></div>
-            <div class="corner-accent tr"></div>
-            <div class="corner-accent bl"></div>
-            <div class="corner-accent br"></div>
-
-            <div class="top-meta-row">
-                <span>Certificate No.: <span class="handwritten-inline-no">${safeCertNo}</span></span>
-                <span>Serial No.: <span class="handwritten-serial-no">${displaySerialNo}</span></span>
-            </div>
-
-            <div class="header-top">${orgHeader}</div>
-            <h1 class="main-title-en">Certificate of Registration of Trademark</h1>
-
-            <div class="sub-meta-bar">
-                <span>Trademark / Reg. No.: <span class="handwritten-inline-no">${displayRegNo}</span></span>
-                <span>Date: <span class="highlight-val">${safeDateEn}</span></span>
-            </div>
-
-            <div class="narrative-body">
-                <p>
-                    Certified that the Trademark of which a representation is annexed hereto has been registered in the name of <span class="highlight-val">${safeOwnerName}</span> for the mark <span class="highlight-val">${safeTrademarkName}</span> under Registration No. <span class="handwritten-inline-no">${displayRegNo}</span> (Certificate No. <span class="handwritten-inline-no">${safeCertNo}</span>) as of <span class="highlight-val">${safeDateEn}</span>, with current status recorded as <span class="highlight-val">${safeStatus}</span>.
-                </p>
-            </div>
-
-            ${documentPreviewHtml}
-
-            ${legalNoticeHtml}
-
-            <div class="bottom-qr-bar">
-                <div class="qr-box">
-                    <img src="${escapeHtml(qrImageUrl)}" alt="Verification QR Code" onerror="this.parentElement.style.display='none';">
-                </div>
-            </div>
-
-            <div class="footer-section">
-                <div class="sign-box">
-                    <div class="sign-space">${verifiedSignatureHtml}</div>
-                    <div class="sign-line"></div>
-                    <div class="sign-title">Verified By</div>
-                </div>
-
-                <div class="sign-box">
-                    <div class="sign-space">${authorizedSignatureHtml}</div>
-                    <div class="sign-line"></div>
-                    <div class="sign-title">Authorized Signatory</div>
-                </div>
-            </div>
+<div class="card">
+    <div class="top-bar">
+        <div>
+            <h1 class="tm-title">${safeTmName}</h1>
+            <div class="tm-no">Trademark No.: ${safeCertNo}</div>
         </div>
+        <button class="print-btn" onclick="window.print()">Print / Save PDF</button>
+    </div>
+
+    ${filePreviewHtml}
+
+    <div class="footer-bar">
+        <div>
+            <strong>Brand & Trademark Verification Record:</strong> This trademark record is stored for brand protection and authenticity verification. Unauthorized copying, imitation, or misuse of <strong>${safeTmName}</strong> is strictly prohibited.
+        </div>
+        <img src="${escapeHtml(qrImageUrl)}" alt="QR Code" class="qr-img" onerror="this.style.display='none';" />
     </div>
 </div>
-
 </body>
 </html>`;
 
-    res.send(certHtml);
+    res.send(html);
   } catch (error) {
     res.status(500).send(`Server Error: ${error.message}`);
   }
@@ -873,7 +468,7 @@ app.post('/api/admin-login', (req, res) => {
     return res.status(200).json({ success: true });
   }
 
-  return res.status(401).json({ error: 'Invalid password! Please try again.' });
+  return res.status(401).json({ error: 'Invalid password!' });
 });
 
 app.post('/api/add-certificate', async (req, res) => {
@@ -886,41 +481,27 @@ app.post('/api/add-certificate', async (req, res) => {
 
     const {
       certificate_no,
-      serial_no,
-      registration_no,
-      owner_name,
       trademark_name,
-      status,
-      organization_name,
-      logo_url,
       document_file,
-      document_mime_type,
-      verified_by_sign,
-      authorized_sign,
-      custom_notice
+      document_mime_type
     } = req.body;
+
+    if (!certificate_no || !trademark_name || !document_file) {
+      return res.status(400).json({ error: 'Trademark number, trademark name, and file are required' });
+    }
 
     const newCertificate = new Trademark({
       certificate_no,
-      serial_no,
-      registration_no,
-      owner_name,
       trademark_name,
-      status,
-      organization_name,
-      logo_url,
       document_file,
-      document_mime_type,
-      verified_by_sign,
-      authorized_sign,
-      custom_notice
+      document_mime_type
     });
 
     await newCertificate.save();
-    res.status(201).json({ message: 'Certificate saved successfully', data: newCertificate });
+    res.status(201).json({ message: 'Saved successfully', data: newCertificate });
   } catch (error) {
     if (error.code === 11000) {
-      return res.status(409).json({ error: 'This certificate number already exists' });
+      return res.status(409).json({ error: 'This trademark number already exists' });
     }
     res.status(500).json({ error: error.message });
   }
