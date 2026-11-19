@@ -5,11 +5,9 @@ const cors = require('cors');
 
 const app = express();
 
-// মিডলওয়্যার (Middleware)
 app.use(express.json());
 app.use(cors());
 
-// Vercel Serverless এর জন্য MongoDB কানেকশন ক্যাশিং
 let cached = global.mongoose;
 if (!cached) {
   cached = global.mongoose = { conn: null, promise: null };
@@ -44,7 +42,6 @@ async function connectDB() {
   return cached.conn;
 }
 
-// ট্রেডমার্ক স্কিমা (Schema)
 const trademarkSchema = new mongoose.Schema({
   certificate_no: { type: String, required: true, unique: true },
   owner_name: { type: String, required: true },
@@ -58,7 +55,6 @@ const trademarkSchema = new mongoose.Schema({
 
 const Trademark = mongoose.model('Trademark', trademarkSchema);
 
-// অ্যাডমিন পাসওয়ার্ড যাচাই করার হেল্পার
 function isValidAdminPassword(req) {
   const expectedPassword = process.env.ADMIN_PASSWORD;
   if (!expectedPassword) return true;
@@ -68,7 +64,6 @@ function isValidAdminPassword(req) {
   return providedPassword === expectedPassword;
 }
 
-// অ্যাডমিন প্যানেল HTML
 const adminHtml = `<!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -174,7 +169,7 @@ const adminHtml = `<!DOCTYPE html>
     }
 
     async function verifyPassword(password) {
-        return fetch(\`\${API_BASE_URL}/api/admin-login\`, {
+        return fetch(`${API_BASE_URL}/api/admin-login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -268,7 +263,7 @@ const adminHtml = `<!DOCTYPE html>
         };
 
         try {
-            const response = await fetch(\`\${API_BASE_URL}/api/add-certificate\`, {
+            const response = await fetch(`${API_BASE_URL}/api/add-certificate`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -282,7 +277,7 @@ const adminHtml = `<!DOCTYPE html>
             if (response.ok) {
                 messageDiv.style.color = 'green';
                 messageDiv.innerText = '✅ সফলভাবে ডাটাবেইজে যোগ করা হয়েছে!';
-                viewCertLink.innerHTML = \`<a href="/certificate/\${encodeURIComponent(certVal)}" target="_blank" class="view-btn">📄 সার্টিফিকেট দেখুন ও প্রিন্ট করুন</a>\`;
+                viewCertLink.innerHTML = `<a href="/certificate/${encodeURIComponent(certVal)}" target="_blank" class="view-btn">📄 সার্টিফিকেট দেখুন ও প্রিন্ট করুন</a>`;
                 viewCertLink.style.display = 'block';
                 addCertificateForm.reset();
             } else if (response.status === 401) {
@@ -302,7 +297,6 @@ const adminHtml = `<!DOCTYPE html>
 </body>
 </html>`;
 
-// হোম রাউট
 app.get('/', async (req, res) => {
   try {
     await connectDB();
@@ -312,12 +306,10 @@ app.get('/', async (req, res) => {
   }
 });
 
-// অ্যাডমিন প্যানেল রাউট
 app.get('/admin', (req, res) => {
   res.send(adminHtml);
 });
 
-// QR কোড ও ফলব্যাক সমৃদ্ধ সার্টিফিকেট ভিউ রাউট
 app.get('/certificate/:certificate_no', async (req, res) => {
   try {
     await connectDB();
@@ -346,20 +338,17 @@ app.get('/certificate/:certificate_no', async (req, res) => {
       day: 'numeric'
     });
 
-    // বর্তমান সার্টিফিকেটের পূর্ণাঙ্গ ভেরিফিকেশন URL
     const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
     const host = req.get('host');
-    const fullVerifyUrl = \`\${protocol}://\${host}/certificate/\${encodeURIComponent(cert.certificate_no)}\`;
-    const qrImageUrl = \`https://api.qrserver.com/v1/create-qr-code/?size=140x140&margin=4&data=\${encodeURIComponent(fullVerifyUrl)}\`;
+    const fullVerifyUrl = `${protocol}://${host}/certificate/${encodeURIComponent(cert.certificate_no)}`;
+    const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&margin=4&data=${encodeURIComponent(fullVerifyUrl)}`;
 
-    // শীর্ষ লোগো: লিঙ্ক থাকলে দেখাবে, আর লিঙ্ক নষ্ট হলে চুপচাপ হাইড হবে
     const topLogoHtml = cert.logo_url
       ? `<div style="text-align: center; margin-bottom: 10px;">
            <img src="${cert.logo_url}" alt="Logo" style="max-height: 70px; max-width: 160px; object-fit: contain;" onerror="this.style.display='none';">
          </div>`
       : '';
 
-    // ডিফল্ট গোল্ডেন সিল
     const defaultGoldSealHtml = `
       <div class="official-gold-seal">
         <div class="seal-inner">
@@ -370,7 +359,6 @@ app.get('/certificate/:certificate_no', async (req, res) => {
       </div>
     `;
 
-    // নিচের সিল: লোগো লোড না হলে স্বয়ংক্রিয়ভাবে গোল্ডেন সিলে ফিরে যাবে
     const bottomSealHtml = cert.logo_url
       ? `<div style="position: relative; display: inline-block;">
            <img src="${cert.logo_url}" alt="Seal" style="max-height: 82px; max-width: 82px; object-fit: contain; border-radius: 50%; border: 3px double #c59b27; padding: 3px; background: #fff;" onerror="this.style.display='none'; document.getElementById('fallback-seal').style.display='flex';">
@@ -378,7 +366,6 @@ app.get('/certificate/:certificate_no', async (req, res) => {
          </div>`
       : defaultGoldSealHtml;
 
-    // সতর্কবার্তা / নোটিশ
     const warningNoticeHtml = cert.custom_notice
       ? `<div class="warning-box">
             <strong>সতর্কতা / Proprietary Warning Notice:</strong><br>
@@ -555,7 +542,6 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             text-align: justify;
         }
 
-        /* QR কোড ও ভেরিফিকেশন বার */
         .qr-verify-row {
             margin-top: 16px;
             padding-top: 12px;
@@ -789,7 +775,6 @@ app.get('/certificate/:certificate_no', async (req, res) => {
   }
 });
 
-// লগইন পাসওয়ার্ড যাচাই API
 app.post('/api/admin-login', (req, res) => {
   const expectedPassword = process.env.ADMIN_PASSWORD;
   if (!expectedPassword) {
@@ -806,7 +791,6 @@ app.post('/api/admin-login', (req, res) => {
   return res.status(401).json({ error: 'ভুল পাসওয়ার্ড! আবার চেষ্টা করুন।' });
 });
 
-// নতুন সার্টিফিকেট যোগ করার API
 app.post('/api/add-certificate', async (req, res) => {
   try {
     if (!isValidAdminPassword(req)) {
@@ -845,7 +829,6 @@ app.post('/api/add-certificate', async (req, res) => {
   }
 });
 
-// একক সার্টিফিকেট API
 app.get('/api/certificate/:certificate_no', async (req, res) => {
   try {
     await connectDB();
@@ -863,7 +846,6 @@ app.get('/api/certificate/:certificate_no', async (req, res) => {
   }
 });
 
-// সব সার্টিফিকেটের তালিকা API
 app.get('/api/certificates', async (req, res) => {
   try {
     await connectDB();
@@ -874,7 +856,6 @@ app.get('/api/certificates', async (req, res) => {
   }
 });
 
-// সার্ভার লিসেনিং
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
