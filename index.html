@@ -5,80 +5,99 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>অ্যাডমিন প্যানেল - ট্রেডমার্ক এন্ট্রি</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        body { font-family: Arial, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px 0; }
         .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-        h2 { text-align: center; color: #333; margin-bottom: 20px; }
+        h2 { text-align: center; color: #333; margin-top: 0; margin-bottom: 20px; }
         input, select, button { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
         button { background-color: #28a745; color: white; border: none; cursor: pointer; font-size: 16px; font-weight: bold; }
         button:hover { background-color: #218838; }
-        #message { text-align: center; margin-top: 15px; font-weight: bold; }
+        .logout-btn { background-color: #dc3545; margin-top: 5px; }
+        .logout-btn:hover { background-color: #c82333; }
+        #message, #loginMessage { text-align: center; margin-top: 15px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>নতুন ট্রেডমার্ক যোগ করুন</h2>
-    <form id="addCertificateForm">
-        <label>সার্টিফিকেট নাম্বার:</label>
-        <input type="text" id="certNo" placeholder="যেমন: TM-2026-001" required>
+    <!-- ১. লগইন বক্স -->
+    <div id="loginSection">
+        <h2>অ্যাডমিন লগইন</h2>
+        <form id="loginForm">
+            <label>অ্যাডমিন পাসওয়ার্ড:</label>
+            <input type="password" id="adminPassword" placeholder="পাসওয়ার্ড লিখুন" required>
+            <button type="submit">প্রবেশ করুন</button>
+        </form>
+        <div id="loginMessage"></div>
+    </div>
 
-        <label>মালিকের নাম:</label>
-        <input type="text" id="ownerName" placeholder="যেমন: Shaikat Hasan" required>
+    <!-- ২. ট্রেডমার্ক ফর্ম বক্স (লগইনের পর দৃশ্যমান হবে) -->
+    <div id="adminSection" style="display: none;">
+        <h2>নতুন ট্রেডমার্ক যোগ করুন</h2>
+        <form id="addCertificateForm">
+            <label>সার্টিফিকেট নাম্বার:</label>
+            <input type="text" id="certNo" placeholder="যেমন: TM-2026-001" required>
 
-        <label>ট্রেডমার্কের নাম:</label>
-        <input type="text" id="tmName" placeholder="যেমন: Smart Brand" required>
+            <label>মালিকের নাম:</label>
+            <input type="text" id="ownerName" placeholder="যেমন: Shaikat Hasan" required>
 
-        <label>স্ট্যাটাস:</label>
-        <select id="status">
-            <option value="Active">Active (সক্রিয়)</option>
-            <option value="Pending">Pending (অপেক্ষমাণ)</option>
-            <option value="Expired">Expired (মেয়াদোত্তীর্ণ)</option>
-        </select>
+            <label>ট্রেডমার্কের নাম:</label>
+            <input type="text" id="tmName" placeholder="যেমন: Smart Brand" required>
 
-        <button type="submit">ডাটাবেইজে সেভ করুন</button>
-    </form>
-    <div id="message"></div>
+            <label>স্ট্যাটাস:</label>
+            <select id="status">
+                <option value="Active">Active (সক্রিয়)</option>
+                <option value="Pending">Pending (অপেক্ষমাণ)</option>
+                <option value="Expired">Expired (মেয়াদোত্তীর্ণ)</option>
+            </select>
+
+            <button type="submit">ডাটাবেইজে সেভ করুন</button>
+            <button type="button" id="logoutBtn" class="logout-btn">লগআউট</button>
+        </form>
+        <div id="message"></div>
+    </div>
 </div>
 
 <script>
-    document.getElementById('addCertificateForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const messageDiv = document.getElementById('message');
-        messageDiv.style.color = 'blue';
-        messageDiv.innerText = 'ডাটা সেভ হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন...';
+    const API_BASE_URL = 'https://tredmark-api-omih.vercel.app';
+    const PASS_STORAGE_KEY = 'tredmark_admin_token';
 
-        const data = {
-            certificate_no: document.getElementById('certNo').value,
-            owner_name: document.getElementById('ownerName').value,
-            trademark_name: document.getElementById('tmName').value,
-            status: document.getElementById('status').value
-        };
+    const loginSection = document.getElementById('loginSection');
+    const adminSection = document.getElementById('adminSection');
+    const loginForm = document.getElementById('loginForm');
+    const loginMessage = document.getElementById('loginMessage');
+    const adminPasswordInput = document.getElementById('adminPassword');
+    const addCertificateForm = document.getElementById('addCertificateForm');
+    const messageDiv = document.getElementById('message');
+    const logoutBtn = document.getElementById('logoutBtn');
 
-        try {
-            // নিচে আপনার Vercel-এর লাইভ লিংকটি বসাতে হবে
-            const response = await fetch('https://tredmark-api-omih.vercel.app/api/add-certificate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-
-            const result = await response.json();
-
-            if (response.ok) {
-                messageDiv.style.color = 'green';
-                messageDiv.innerText = '✅ সফলভাবে ডাটাবেইজে যোগ করা হয়েছে!';
-                document.getElementById('addCertificateForm').reset();
-            } else {
-                messageDiv.style.color = 'red';
-                messageDiv.innerText = '❌ এরর: ' + (result.error || 'সেভ করা যায়নি!');
-            }
-        } catch (error) {
-            messageDiv.style.color = 'red';
-            messageDiv.innerText = '❌ সার্ভারের সাথে কানেক্ট করা যাচ্ছে না!';
+    // পূর্বের সংরক্ষিত সেশন চেক
+    function checkLoginState() {
+        const savedPass = sessionStorage.getItem(PASS_STORAGE_KEY);
+        if (savedPass) {
+            loginSection.style.display = 'none';
+            adminSection.style.display = 'block';
+        } else {
+            loginSection.style.display = 'block';
+            adminSection.style.display = 'none';
         }
-    });
-</script>
+    }
 
-</body>
-</html>
+    // লগইন সাবমিট
+    loginForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const enteredPassword = adminPasswordInput.value.trim();
+        if (!enteredPassword) {
+            loginMessage.style.color = 'red';
+            loginMessage.innerText = 'অনুগ্রহ করে পাসওয়ার্ড লিখুন';
+            return;
+        }
+
+        sessionStorage.setItem(PASS_STORAGE_KEY, enteredPassword);
+        loginMessage.innerText = '';
+        adminPasswordInput.value = '';
+        checkLoginState();
+    });
+
+    // লগআউট
+    logoutBtn.addEventListener('click', function() {
+        sessionStorage.removeItem(PASS_STORAGE_KEY
