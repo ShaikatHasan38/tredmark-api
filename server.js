@@ -341,8 +341,9 @@ const adminHtml = `<!DOCTYPE html>
                 if (resData.ok) {
                     messageDiv.style.color = 'green';
                     messageDiv.innerText = 'Saved to portal database!';
-                    var certUrl = API_BASE_URL + '/certificate/' + encodeURIComponent(certVal);
-                    viewCertLink.innerHTML = '<a href="/certificate/' + encodeURIComponent(certVal) + '" target="_blank" class="view-btn">Open Record: ' + certUrl + '</a>';
+                    var tmPath = '/trademark/' + encodeURIComponent(certVal);
+                    var tmUrl = API_BASE_URL + tmPath;
+                    viewCertLink.innerHTML = '<a href="' + tmPath + '" target="_blank" class="view-btn">Open Record: ' + tmUrl + '</a>';
                     viewCertLink.style.display = 'block';
                     addCertificateForm.reset();
                 } else if (resData.status === 401) {
@@ -578,7 +579,7 @@ function buildPortalPage(initialSerial, recordData) {
         e.preventDefault();
         var val = document.getElementById('serialInput').value.trim();
         if (!val) return;
-        window.location.href = '/certificate/' + encodeURIComponent(val);
+        window.location.href = '/trademark/' + encodeURIComponent(val);
     }
 
     function toggleDoc() {
@@ -612,7 +613,7 @@ app.get('/admin', (req, res) => {
   res.send(adminHtml);
 });
 
-app.get('/certificate/:certificate_no', async (req, res) => {
+app.get('/trademark/:certificate_no', async (req, res) => {
   try {
     await connectDB();
     const cert = await Trademark.findOne({
@@ -681,7 +682,7 @@ app.post('/api/add-certificate', async (req, res) => {
   }
 });
 
-app.get('/api/certificate/:certificate_no', async (req, res) => {
+app.get('/api/trademark/:certificate_no', async (req, res) => {
   try {
     await connectDB();
     const certificate = await Trademark.findOne({
