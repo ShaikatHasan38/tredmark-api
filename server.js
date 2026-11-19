@@ -128,7 +128,7 @@ const adminHtml = `<!DOCTYPE html>
             </select>
 
             <div class="file-box">
-                <label for="certFile" style="margin-top:0;">Choose Certificate File (Image / PDF) *</label>
+                <label for="certFile" style="margin-top:0;">Choose Tredmark File (Image / PDF) *</label>
                 <input type="file" id="certFile" accept="image/*,application/pdf" required>
             </div>
 
@@ -273,7 +273,7 @@ const adminHtml = `<!DOCTYPE html>
     function readFile(file) {
         return new Promise(function(resolve, reject) {
             if (!file) {
-                reject(new Error('Please choose a certificate file'));
+                reject(new Error('Please choose a tredmark file'));
                 return;
             }
             if (file.type && file.type.startsWith('image/')) {
@@ -425,8 +425,8 @@ function buildPortalPage(initialSerial, recordData) {
         </div>
 
         <div class="doc-section">
-          <div class="doc-heading">STORED CERTIFICATE DOCUMENT</div>
-          ${recordData.document_file ? '<button type="button" class="view-cert-btn" onclick="toggleDoc()">View Stored Certificate</button>' : '<div class="no-doc-note">No document file attached to this record.</div>'}
+          <div class="doc-heading">STORED TRADEMARK DOCUMENT</div>
+          ${recordData.document_file ? '<button type="button" class="view-cert-btn" onclick="toggleDoc()">View Stored Tredmark File</button>' : '<div class="no-doc-note">No document file attached to this record.</div>'}
           ${docSection}
         </div>
 
