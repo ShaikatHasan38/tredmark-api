@@ -44,7 +44,7 @@ async function connectDB() {
   return cached.conn;
 }
 
-// ট্রেডমার্ক স্কিমা (Schema)
+// আপগ্রেডেড স্কিমা
 const trademarkSchema = new mongoose.Schema({
   certificate_no: { type: String, required: true, unique: true },
   owner_name: { type: String, required: true },
@@ -58,7 +58,7 @@ const trademarkSchema = new mongoose.Schema({
 
 const Trademark = mongoose.model('Trademark', trademarkSchema);
 
-// অ্যাডমিন পাসওয়ার্ড যাচাই করার হেল্পার
+// অ্যাডমিন পাসওয়ার্ড যাচাই হেল্পার
 function isValidAdminPassword(req) {
   const expectedPassword = process.env.ADMIN_PASSWORD;
   if (!expectedPassword) return true;
@@ -68,7 +68,7 @@ function isValidAdminPassword(req) {
   return providedPassword === expectedPassword;
 }
 
-// অ্যাডমিন প্যানেল HTML
+// অ্যাডমিন প্যানেল HTML (নির্দেশনাসহ)
 const adminHtml = `<!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -77,12 +77,13 @@ const adminHtml = `<!DOCTYPE html>
     <title>অ্যাডমিন প্যানেল - ট্রেডমার্ক এন্ট্রি ও এডিটর</title>
     <style>
         body { font-family: 'SolaimanLipi', 'Kalpurush', Arial, sans-serif; background-color: #f0f3f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 25px 0; }
-        .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); width: 100%; max-width: 480px; box-sizing: border-box; }
+        .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); width: 100%; max-width: 500px; box-sizing: border-box; }
         h2 { text-align: center; color: #1a365d; margin-top: 0; margin-bottom: 20px; }
         label { font-weight: bold; font-size: 13.5px; color: #2d3748; display: block; margin-top: 10px; }
-        input, select, textarea, button { width: 100%; padding: 10px; margin: 6px 0 12px 0; border: 1px solid #cbd5e0; border-radius: 5px; box-sizing: border-box; font-size: 14.5px; font-family: inherit; }
+        input, select, textarea, button { width: 100%; padding: 10px; margin: 6px 0 6px 0; border: 1px solid #cbd5e0; border-radius: 5px; box-sizing: border-box; font-size: 14.5px; font-family: inherit; }
+        .hint-text { font-size: 11.5px; color: #718096; margin-bottom: 10px; display: block; }
         textarea { resize: vertical; min-height: 75px; }
-        button { background-color: #1a365d; color: white; border: none; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 10px; }
+        button { background-color: #1a365d; color: white; border: none; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 12px; }
         button:hover { background-color: #2b6cb0; }
         button:disabled { background-color: #a0aec0; cursor: not-allowed; }
         .logout-btn { background-color: #e53e3e; margin-top: 8px; }
@@ -118,9 +119,11 @@ const adminHtml = `<!DOCTYPE html>
 
             <label for="orgName">প্রতিষ্ঠানের নাম / অথরিটি হেডার (ঐচ্ছিক)</label>
             <input type="text" id="orgName" placeholder="যেমন: Intellectual Property Verification Registry">
+            <span class="hint-text">ফাঁকা রাখলে ডিফল্ট অফিসিয়াল হেডার ব্যবহৃত হবে।</span>
 
-            <label for="logoUrl">লোগো লিঙ্ক (Logo URL - ঐচ্ছিক)</label>
+            <label for="logoUrl">লোগো লিংক (Logo URL - ঐচ্ছিক)</label>
             <input type="url" id="logoUrl" placeholder="https://example.com/logo.png">
+            <span class="hint-text">সরাসরি ছবির লিংক দিন (.png, .jpg)। না থাকলে ফাঁকা রাখুন, স্বয়ংক্রিয়ভাবে আসল সিল ব্যবহৃত হবে।</span>
 
             <label for="status">স্ট্যাটাস:</label>
             <select id="status">
@@ -131,6 +134,7 @@ const adminHtml = `<!DOCTYPE html>
 
             <label for="customNotice">কাস্টম সতর্কবার্তা / নোটিশ (ঐচ্ছিক):</label>
             <textarea id="customNotice" placeholder="অননুমোদিত নাম বা লোগো ব্যবহার রোধের জন্য নিজস্ব বার্তা লিখুন..."></textarea>
+            <span class="hint-text">ফাঁকা রাখলে সাধারণ স্বত্ব সংরক্ষণ ও আইনি সতর্কবার্তা প্রদর্শিত হবে।</span>
 
             <button type="submit" id="submitBtn">ডাটাবেইজে সেভ করুন</button>
             <div id="viewCertLink" style="display:none;"></div>
@@ -278,7 +282,7 @@ const adminHtml = `<!DOCTYPE html>
             if (response.ok) {
                 messageDiv.style.color = 'green';
                 messageDiv.innerText = '✅ সফলভাবে ডাটাবেইজে যোগ করা হয়েছে!';
-                viewCertLink.innerHTML = \`<a href="/certificate/\${encodeURIComponent(certVal)}" target="_blank" class="view-btn">📄 আসল লুকের সার্টিফিকেট দেখুন ও প্রিন্ট করুন</a>\`;
+                viewCertLink.innerHTML = \`<a href="/certificate/\${encodeURIComponent(certVal)}" target="_blank" class="view-btn">📄 সার্টিফিকেট দেখুন ও প্রিন্ট করুন</a>\`;
                 viewCertLink.style.display = 'block';
                 addCertificateForm.reset();
             } else if (response.status === 401) {
@@ -313,7 +317,7 @@ app.get('/admin', (req, res) => {
   res.send(adminHtml);
 });
 
-// সার্টিফিকেট ভিউ রাউট (আসল ডকুমেন্টের কালার ও ওয়াটারমার্কসহ)
+// সুরক্ষিত ও ফলব্যাক সমৃদ্ধ সার্টিফিকেট ভিউ রাউট
 app.get('/certificate/:certificate_no', async (req, res) => {
   try {
     await connectDB();
@@ -342,22 +346,33 @@ app.get('/certificate/:certificate_no', async (req, res) => {
       day: 'numeric'
     });
 
-    // লোগো রেন্ডারিং
+    // শীর্ষ লোগো: লিঙ্ক থাকলে দেখাবে, আর লিঙ্ক নষ্ট হলে চুপচাপ হাইড হবে (সার্টিফিকেট নষ্ট করবে না)
     const topLogoHtml = cert.logo_url
-      ? `<div style="text-align: center; margin-bottom: 12px;"><img src="${cert.logo_url}" alt="Logo" style="max-height: 75px; max-width: 170px; object-fit: contain;"></div>`
+      ? `<div style="text-align: center; margin-bottom: 10px;">
+           <img src="${cert.logo_url}" alt="Logo" style="max-height: 70px; max-width: 160px; object-fit: contain;" onerror="this.style.display='none';">
+         </div>`
       : '';
 
-    const sealHtml = cert.logo_url
-      ? `<img src="${cert.logo_url}" alt="Seal" style="max-height: 85px; max-width: 85px; object-fit: contain; border-radius: 50%; border: 3px double #c59b27; padding: 4px; background: #fff;">`
-      : `<div class="official-gold-seal">
-            <div class="seal-inner">
-                <span>OFFICIAL</span>
-                <strong>VERIFIED</strong>
-                <span>SEAL</span>
-            </div>
-         </div>`;
+    // ডিফল্ট গোল্ডেন সিলের HTML
+    const defaultGoldSealHtml = `
+      <div class="official-gold-seal">
+        <div class="seal-inner">
+          <span>OFFICIAL</span>
+          <strong>VERIFIED</strong>
+          <span>SEAL</span>
+        </div>
+      </div>
+    `;
 
-    // সতর্কবার্তা / নোটিশ
+    // নিচের সিল: লিঙ্ক থাকলে লোগো দেখাবে; যদি ইমেজ ভাঙা থাকে তবে স্বয়ংক্রিয়ভাবে গোল্ডেন সিলে ফিরে যাবে
+    const bottomSealHtml = cert.logo_url
+      ? `<div style="position: relative; display: inline-block;">
+           <img src="${cert.logo_url}" alt="Seal" style="max-height: 82px; max-width: 82px; object-fit: contain; border-radius: 50%; border: 3px double #c59b27; padding: 3px; background: #fff;" onerror="this.style.display='none'; document.getElementById('fallback-seal').style.display='flex';">
+           <div id="fallback-seal" style="display: none;">${defaultGoldSealHtml}</div>
+         </div>`
+      : defaultGoldSealHtml;
+
+    // সতর্কবার্তা / নোটিশ লজিক
     const warningNoticeHtml = cert.custom_notice
       ? `<div class="warning-box">
             <strong>সতর্কতা / Proprietary Warning Notice:</strong><br>
@@ -365,7 +380,7 @@ app.get('/certificate/:certificate_no', async (req, res) => {
          </div>`
       : `<div class="warning-box">
             <strong>স্বত্ব ও আইনি সতর্কতা / Legal Warning & Notice:</strong><br>
-            এই নথিতে উল্লিখিত নাম, ট্রেডমার্ক ও লোগো স্বত্বাধিকারী কর্তৃক সংরক্ষিত। পূর্বানুমোদন ব্যতিরেকে কোনো ব্যক্তি, প্রতিষ্ঠান বা তৃতীয় পক্ষ কর্তৃক এর অননুমোদিত ব্যবহার, নকল বা অনুকরণ সম্পূর্ণ নিষিদ্ধ এবং আইনগত লঙ্ঘনমূলক আচরণ বলে গণ্য হবে।<br>
+            এই নথিতে উল্লিখিত নাম, ট্রেডমার্ক ও সংশ্লিষ্ট লোগো স্বত্বাধিকারী কর্তৃক সংরক্ষিত। পূর্বানুমোদন ব্যতিরেকে কোনো ব্যক্তি বা প্রতিষ্ঠান কর্তৃক এর অননুমোদিত ব্যবহার, অনুকরণ বা নকল করা সম্পূর্ণ নিষিদ্ধ এবং আইনগত লঙ্ঘনমূলক আচরণ বলে গণ্য হবে।<br>
             <em>Unauthorized copying, reproduction, imitation, or misuse of this brand identity is strictly prohibited.</em>
          </div>`;
 
@@ -389,7 +404,6 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             font-family: 'Noto Serif Bengali', 'SolaimanLipi', 'Kalpurush', Georgia, serif;
         }
         
-        /* পার্চমেন্ট বা অফ-হোয়াইট ক্লাসিক কাগজের টেক্সচার কালার */
         .page {
             width: 210mm;
             min-height: 297mm;
@@ -406,24 +420,22 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             overflow: hidden;
         }
 
-        /* সূক্ষ্ম ব্যাকগ্রাউন্ড ওয়াটারমার্ক যা আসল ফিল দেয় */
         .watermark {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%) rotate(-30deg);
-            font-size: 80px;
+            font-size: 75px;
             font-family: 'Cinzel', serif;
             font-weight: 900;
             color: rgba(183, 121, 31, 0.05);
             text-transform: uppercase;
             pointer-events: none;
-            letter-spacing: 12px;
+            letter-spacing: 10px;
             white-space: nowrap;
             z-index: 1;
         }
 
-        /* রয়্যাল নেভি বর্ডার */
         .outer-border {
             border: 5px solid #0f2b46;
             padding: 5px;
@@ -433,7 +445,6 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             background: rgba(251, 249, 243, 0.94);
         }
 
-        /* গোল্ডেন মেটালিক ইনার বর্ডার */
         .inner-border {
             border: 2px solid #c59b27;
             outline: 1px dashed #c59b27;
@@ -444,7 +455,6 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             position: relative;
         }
 
-        /* কোণার অলঙ্করণ কোড (Corner Accents) */
         .corner-accent {
             position: absolute;
             width: 18px;
@@ -489,7 +499,6 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             text-align: justify;
         }
         
-        /* টেবিলের কালার স্কিম */
         .details-table {
             width: 100%;
             border-collapse: collapse;
@@ -540,7 +549,6 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             text-align: justify;
         }
         
-        /* গোল্ডেন মেটালিক সিল */
         .official-gold-seal {
             width: 82px;
             height: 82px;
@@ -552,6 +560,7 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             display: flex;
             align-items: center;
             justify-content: center;
+            box-sizing: border-box;
         }
         .seal-inner {
             width: 74px;
@@ -694,7 +703,7 @@ app.get('/certificate/:certificate_no', async (req, res) => {
                 </div>
 
                 <div style="text-align: center;">
-                    ${sealHtml}
+                    ${bottomSealHtml}
                 </div>
 
                 <div class="sign-box">
@@ -715,7 +724,7 @@ app.get('/certificate/:certificate_no', async (req, res) => {
   }
 });
 
-// লগইন পাসওয়ার্ড যাচাই করার API
+// লগইন পাসওয়ার্ড যাচাই API
 app.post('/api/admin-login', (req, res) => {
   const expectedPassword = process.env.ADMIN_PASSWORD;
   if (!expectedPassword) {
@@ -732,7 +741,7 @@ app.post('/api/admin-login', (req, res) => {
   return res.status(401).json({ error: 'ভুল পাসওয়ার্ড! আবার চেষ্টা করুন।' });
 });
 
-// নতুন সার্টিফিকেট অ্যাড করার API (পাসওয়ার্ড সুরক্ষিত)
+// নতুন সার্টিফিকেট যোগ করার API
 app.post('/api/add-certificate', async (req, res) => {
   try {
     if (!isValidAdminPassword(req)) {
@@ -771,7 +780,7 @@ app.post('/api/add-certificate', async (req, res) => {
   }
 });
 
-// সার্টিফিকেট নম্বর দিয়ে নির্দিষ্ট তথ্য খোঁজার API
+// একক সার্টিফিকেট API
 app.get('/api/certificate/:certificate_no', async (req, res) => {
   try {
     await connectDB();
@@ -789,7 +798,7 @@ app.get('/api/certificate/:certificate_no', async (req, res) => {
   }
 });
 
-// ডেটাবেজের সব ট্রেডমার্ক তালিকা দেখার API
+// সব সার্টিফিকেটের তালিকা API
 app.get('/api/certificates', async (req, res) => {
   try {
     await connectDB();
@@ -800,7 +809,7 @@ app.get('/api/certificates', async (req, res) => {
   }
 });
 
-// সার্ভার পোর্ট চালু করা
+// সার্ভার লিসেনিং
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
