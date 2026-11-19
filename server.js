@@ -44,7 +44,7 @@ async function connectDB() {
   return cached.conn;
 }
 
-// আপগ্রেডেড স্কিমা
+// ট্রেডমার্ক স্কিমা (Schema)
 const trademarkSchema = new mongoose.Schema({
   certificate_no: { type: String, required: true, unique: true },
   owner_name: { type: String, required: true },
@@ -58,7 +58,7 @@ const trademarkSchema = new mongoose.Schema({
 
 const Trademark = mongoose.model('Trademark', trademarkSchema);
 
-// অ্যাডমিন পাসওয়ার্ড যাচাই হেল্পার
+// অ্যাডমিন পাসওয়ার্ড যাচাই করার হেল্পার
 function isValidAdminPassword(req) {
   const expectedPassword = process.env.ADMIN_PASSWORD;
   if (!expectedPassword) return true;
@@ -68,7 +68,7 @@ function isValidAdminPassword(req) {
   return providedPassword === expectedPassword;
 }
 
-// অ্যাডমিন প্যানেল HTML (নির্দেশনাসহ)
+// অ্যাডমিন প্যানেল HTML
 const adminHtml = `<!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -317,7 +317,7 @@ app.get('/admin', (req, res) => {
   res.send(adminHtml);
 });
 
-// সুরক্ষিত ও ফলব্যাক সমৃদ্ধ সার্টিফিকেট ভিউ রাউট
+// QR কোড ও ফলব্যাক সমৃদ্ধ সার্টিফিকেট ভিউ রাউট
 app.get('/certificate/:certificate_no', async (req, res) => {
   try {
     await connectDB();
@@ -346,14 +346,20 @@ app.get('/certificate/:certificate_no', async (req, res) => {
       day: 'numeric'
     });
 
-    // শীর্ষ লোগো: লিঙ্ক থাকলে দেখাবে, আর লিঙ্ক নষ্ট হলে চুপচাপ হাইড হবে (সার্টিফিকেট নষ্ট করবে না)
+    // বর্তমান সার্টিফিকেটের পূর্ণাঙ্গ ভেরিফিকেশন URL
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+    const host = req.get('host');
+    const fullVerifyUrl = \`\${protocol}://\${host}/certificate/\${encodeURIComponent(cert.certificate_no)}\`;
+    const qrImageUrl = \`https://api.qrserver.com/v1/create-qr-code/?size=140x140&margin=4&data=\${encodeURIComponent(fullVerifyUrl)}\`;
+
+    // শীর্ষ লোগো: লিঙ্ক থাকলে দেখাবে, আর লিঙ্ক নষ্ট হলে চুপচাপ হাইড হবে
     const topLogoHtml = cert.logo_url
       ? `<div style="text-align: center; margin-bottom: 10px;">
            <img src="${cert.logo_url}" alt="Logo" style="max-height: 70px; max-width: 160px; object-fit: contain;" onerror="this.style.display='none';">
          </div>`
       : '';
 
-    // ডিফল্ট গোল্ডেন সিলের HTML
+    // ডিফল্ট গোল্ডেন সিল
     const defaultGoldSealHtml = `
       <div class="official-gold-seal">
         <div class="seal-inner">
@@ -364,7 +370,7 @@ app.get('/certificate/:certificate_no', async (req, res) => {
       </div>
     `;
 
-    // নিচের সিল: লিঙ্ক থাকলে লোগো দেখাবে; যদি ইমেজ ভাঙা থাকে তবে স্বয়ংক্রিয়ভাবে গোল্ডেন সিলে ফিরে যাবে
+    // নিচের সিল: লোগো লোড না হলে স্বয়ংক্রিয়ভাবে গোল্ডেন সিলে ফিরে যাবে
     const bottomSealHtml = cert.logo_url
       ? `<div style="position: relative; display: inline-block;">
            <img src="${cert.logo_url}" alt="Seal" style="max-height: 82px; max-width: 82px; object-fit: contain; border-radius: 50%; border: 3px double #c59b27; padding: 3px; background: #fff;" onerror="this.style.display='none'; document.getElementById('fallback-seal').style.display='flex';">
@@ -372,7 +378,7 @@ app.get('/certificate/:certificate_no', async (req, res) => {
          </div>`
       : defaultGoldSealHtml;
 
-    // সতর্কবার্তা / নোটিশ লজিক
+    // সতর্কবার্তা / নোটিশ
     const warningNoticeHtml = cert.custom_notice
       ? `<div class="warning-box">
             <strong>সতর্কতা / Proprietary Warning Notice:</strong><br>
@@ -449,7 +455,7 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             border: 2px solid #c59b27;
             outline: 1px dashed #c59b27;
             outline-offset: -5px;
-            padding: 24px 28px;
+            padding: 22px 26px;
             box-sizing: border-box;
             text-align: center;
             position: relative;
@@ -488,28 +494,28 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             font-weight: 700;
             color: #b7791f;
             letter-spacing: 2.5px;
-            margin: 4px 0 16px 0;
+            margin: 4px 0 14px 0;
             text-transform: uppercase;
         }
         .proposal-lead {
             font-size: 13.5px;
-            line-height: 1.7;
+            line-height: 1.65;
             color: #2d3748;
-            margin: 12px 0;
+            margin: 10px 0;
             text-align: justify;
         }
         
         .details-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 16px 0;
+            margin: 14px 0;
             text-align: left;
             background: #fff;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
         .details-table th, .details-table td {
             border: 1px solid #d2d6dc;
-            padding: 9px 12px;
+            padding: 8.5px 12px;
             font-size: 13.5px;
         }
         .details-table th {
@@ -533,20 +539,68 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             border: 1px solid #fbd38d;
             background-color: #fffaf0;
             border-left: 4px solid #dd6b20;
-            padding: 10px 14px;
-            margin-top: 14px;
+            padding: 9px 13px;
+            margin-top: 12px;
             text-align: justify;
-            font-size: 12px;
+            font-size: 11.8px;
             color: #7b341e;
-            line-height: 1.6;
+            line-height: 1.55;
             border-radius: 2px;
         }
         .statement-text {
-            font-size: 12px;
+            font-size: 11.8px;
             color: #4a5568;
-            line-height: 1.6;
-            margin-top: 12px;
+            line-height: 1.55;
+            margin-top: 10px;
             text-align: justify;
+        }
+
+        /* QR কোড ও ভেরিফিকেশন বার */
+        .qr-verify-row {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px dashed #cbd5e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 14px;
+            text-align: left;
+        }
+        .qr-meta {
+            flex: 1;
+            font-size: 11.5px;
+            color: #2d3748;
+            line-height: 1.5;
+        }
+        .qr-meta code {
+            display: inline-block;
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10.5px;
+            color: #0f2b46;
+            word-break: break-all;
+            margin-top: 3px;
+        }
+        .qr-box {
+            text-align: center;
+            background: #fff;
+            border: 1px solid #c59b27;
+            padding: 5px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+        .qr-box img {
+            display: block;
+            width: 82px;
+            height: 82px;
+        }
+        .qr-caption {
+            font-size: 9px;
+            font-weight: bold;
+            color: #0f2b46;
+            margin-top: 2px;
+            letter-spacing: 0.4px;
         }
         
         .official-gold-seal {
@@ -586,15 +640,15 @@ app.get('/certificate/:certificate_no', async (req, res) => {
         }
 
         .footer-section {
-            margin-top: 40px;
+            margin-top: 32px;
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
-            padding: 0 10px;
+            padding: 0 8px;
         }
         .sign-box {
             text-align: center;
-            width: 180px;
+            width: 175px;
         }
         .sign-line {
             border-top: 1.5px solid #2d3748;
@@ -692,8 +746,19 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             ${warningNoticeHtml}
 
             <div class="statement-text">
-                এই নথিটি একটি সংরক্ষিত অফিশিয়াল রেকর্ড হিসেবে গণ্য হবে। যেকোনো সময় এর বৈধতা যাচাই করতে অনলাইন পোর্টালে সার্টিফিকেট নম্বর দিয়ে অনুসন্ধান করা যাবে।<br>
-                <em>This document serves as an authentic official record. The validity and status can be verified online through the registered portal using the certificate number.</em>
+                এই নথিটি একটি সংরক্ষিত অফিশিয়াল রেকর্ড হিসেবে গণ্য হবে। যেকোনো সময় এর বৈধতা যাচাই করতে অনলাইন পোর্টালে সার্টিফিকেট নম্বর দিয়ে অনুসন্ধান করা যাবে অথবা পাশের QR কোড স্ক্যান করা যাবে।<br>
+                <em>This document serves as an authentic official record. Validity and status can be verified anytime online using the certificate number or by scanning the QR code.</em>
+            </div>
+
+            <div class="qr-verify-row">
+                <div class="qr-meta">
+                    <strong>অনলাইন ভেরিফিকেশন লিংক / Digital Verification URL:</strong><br>
+                    <code>${fullVerifyUrl}</code>
+                </div>
+                <div class="qr-box">
+                    <img src="${qrImageUrl}" alt="Verification QR Code" onerror="this.parentElement.style.display='none';">
+                    <div class="qr-caption">SCAN TO VERIFY</div>
+                </div>
             </div>
 
             <div class="footer-section">
