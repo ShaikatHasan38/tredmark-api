@@ -5,7 +5,9 @@ const cors = require('cors');
 
 const app = express();
 
-app.use(express.json());
+// ফাইল আপলোডের সুবিধার্থে রিকোয়েস্ট সাইজ লিমিট বাড়ানো হয়েছে (15MB পর্যন্ত)
+app.use(express.json({ limit: '15mb' }));
+app.use(express.urlencoded({ limit: '15mb', extended: true }));
 app.use(cors());
 
 let cached = global.mongoose;
@@ -61,6 +63,8 @@ const trademarkSchema = new mongoose.Schema({
   status: { type: String, default: 'Active' },
   organization_name: { type: String, default: '' },
   logo_url: { type: String, default: '' },
+  document_file: { type: String, default: '' },      // আপলোড করা ফাইলের Base64 ডেটা
+  document_mime_type: { type: String, default: '' }, // ফাইলের টাইপ (e.g. image/png, application/pdf)
   custom_notice: { type: String, default: '' },
   verified_by_sign: { type: String, default: '' },
   authorized_sign: { type: String, default: '' },
@@ -83,15 +87,16 @@ const adminHtml = `<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - Trademark Entry & Customization</title>
+    <title>Admin Panel - Trademark Entry & File Upload</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f0f3f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 25px 0; }
-        .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); width: 100%; max-width: 500px; box-sizing: border-box; }
+        .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); width: 100%; max-width: 520px; box-sizing: border-box; }
         h2 { text-align: center; color: #1a365d; margin-top: 0; margin-bottom: 20px; }
         label { font-weight: bold; font-size: 13.5px; color: #2d3748; display: block; margin-top: 10px; }
         input, select, textarea, button { width: 100%; padding: 10px; margin: 6px 0 6px 0; border: 1px solid #cbd5e0; border-radius: 5px; box-sizing: border-box; font-size: 14.5px; font-family: inherit; }
-        .hint-text { font-size: 11.5px; color: #718096; margin-bottom: 10px; display: block; }
-        textarea { resize: vertical; min-height: 90px; }
+        .hint-text { font-size: 11.5px; color: #718096; margin-bottom: 8px; display: block; }
+        textarea { resize: vertical; min-height: 80px; }
+        .file-input-box { background: #f8fafc; border: 1.5px dashed #cbd5e0; padding: 12px; border-radius: 6px; margin: 6px 0; }
         button { background-color: #1a365d; color: white; border: none; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 12px; }
         button:hover { background-color: #2b6cb0; }
         button:disabled { background-color: #a0aec0; cursor: not-allowed; }
@@ -115,16 +120,16 @@ const adminHtml = `<!DOCTYPE html>
     </div>
 
     <div id="adminSection" style="display: none;">
-        <h2>Trademark Certificate Entry</h2>
+        <h2>Trademark Record & Document Upload</h2>
         <form id="addCertificateForm">
             <label for="certNo">Certificate Number *</label>
             <input type="text" id="certNo" placeholder="e.g. TM-7674" required>
 
             <label for="serialNo">Serial No. (Optional)</label>
-            <input type="text" id="serialNo" placeholder="e.g. 57265">
+            <input type="text" id="serialNo" placeholder="e.g. 57266">
 
-            <label for="regNo">Registration No. (Optional)</label>
-            <input type="text" id="regNo" placeholder="e.g. 193377">
+            <label for="regNo">Registration / Trademark No. (Optional)</label>
+            <input type="text" id="regNo" placeholder="e.g. 193376">
 
             <label for="ownerName">Proprietor / Owner Name *</label>
             <input type="text" id="ownerName" placeholder="e.g. Shaikat Hasan" required>
@@ -132,16 +137,22 @@ const adminHtml = `<!DOCTYPE html>
             <label for="tmName">Trademark Name *</label>
             <input type="text" id="tmName" placeholder="e.g. Bongodb" required>
 
-            <label for="orgName">Registry Header / Organization Name (Optional)</label>
+            <label for="orgName">Registry Header / Authority Name (Optional)</label>
             <input type="text" id="orgName" placeholder="e.g. Brand & Trademark Registry Record">
 
-            <label for="logoUrl">Logo URL (Optional)</label>
+            <div class="file-input-box">
+                <label for="certFile" style="margin-top:0;">Upload Original Certificate File (Image / PDF):</label>
+                <input type="file" id="certFile" accept="image/*,application/pdf">
+                <span class="hint-text">Select your original scanned certificate (PNG, JPG, PDF). It will be saved directly into the database.</span>
+            </div>
+
+            <label for="logoUrl">Or Logo URL (Optional fallback)</label>
             <input type="url" id="logoUrl" placeholder="https://example.com/logo.png">
 
-            <label for="verifiedSign">Left Signature / Verified By (Optional)</label>
+            <label for="verifiedSign">Verified By Signature / Name (Optional)</label>
             <input type="text" id="verifiedSign" placeholder="Leave blank for thin pen signature">
 
-            <label for="authSign">Right Signature / Authorized Signatory (Optional)</label>
+            <label for="authSign">Authorized Signatory Name (Optional)</label>
             <input type="text" id="authSign" placeholder="Leave blank for thin pen signature">
 
             <label for="status">Status:</label>
@@ -155,7 +166,7 @@ const adminHtml = `<!DOCTYPE html>
             <textarea id="customNotice" placeholder="Enter legal notice or terms..."></textarea>
             <span class="hint-text">Leave blank to use the standard trademark legal notice.</span>
 
-            <button type="submit" id="submitBtn">Save to Database</button>
+            <button type="submit" id="submitBtn">Save & Upload to Database</button>
             <div id="viewCertLink" style="display:none;"></div>
             <button type="button" id="logoutBtn" class="logout-btn">Logout</button>
         </form>
@@ -267,6 +278,21 @@ const adminHtml = `<!DOCTYPE html>
         showLoginPanel('', 'red');
     });
 
+    function readFileAsBase64(file) {
+        return new Promise(function(resolve, reject) {
+            if (!file) {
+                resolve({ base64: '', mimeType: '' });
+                return;
+            }
+            var reader = new FileReader();
+            reader.onload = function() {
+                resolve({ base64: reader.result, mimeType: file.type });
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
     addCertificateForm.addEventListener('submit', function(e) {
         e.preventDefault();
 
@@ -276,34 +302,43 @@ const adminHtml = `<!DOCTYPE html>
             return;
         }
 
+        var fileInput = document.getElementById('certFile');
+        var selectedFile = fileInput.files && fileInput.files[0];
+
         submitBtn.disabled = true;
         messageDiv.style.color = 'blue';
-        messageDiv.innerText = 'Saving record, please wait...';
+        messageDiv.innerText = 'Reading file & saving record, please wait...';
         viewCertLink.style.display = 'none';
 
         var certVal = document.getElementById('certNo').value.trim();
-        var payload = {
-            certificate_no: certVal,
-            serial_no: document.getElementById('serialNo').value.trim(),
-            registration_no: document.getElementById('regNo').value.trim(),
-            owner_name: document.getElementById('ownerName').value.trim(),
-            trademark_name: document.getElementById('tmName').value.trim(),
-            status: document.getElementById('status').value,
-            organization_name: document.getElementById('orgName').value.trim(),
-            logo_url: document.getElementById('logoUrl').value.trim(),
-            verified_by_sign: document.getElementById('verifiedSign').value.trim(),
-            authorized_sign: document.getElementById('authSign').value.trim(),
-            custom_notice: document.getElementById('customNotice').value.trim()
-        };
 
-        fetch(API_BASE_URL + '/api/add-certificate', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-admin-password': currentPassword
-            },
-            body: JSON.stringify(payload)
-        })
+        readFileAsBase64(selectedFile)
+            .then(function(fileData) {
+                var payload = {
+                    certificate_no: certVal,
+                    serial_no: document.getElementById('serialNo').value.trim(),
+                    registration_no: document.getElementById('regNo').value.trim(),
+                    owner_name: document.getElementById('ownerName').value.trim(),
+                    trademark_name: document.getElementById('tmName').value.trim(),
+                    status: document.getElementById('status').value,
+                    organization_name: document.getElementById('orgName').value.trim(),
+                    logo_url: document.getElementById('logoUrl').value.trim(),
+                    document_file: fileData.base64,
+                    document_mime_type: fileData.mimeType,
+                    verified_by_sign: document.getElementById('verifiedSign').value.trim(),
+                    authorized_sign: document.getElementById('authSign').value.trim(),
+                    custom_notice: document.getElementById('customNotice').value.trim()
+                };
+
+                return fetch(API_BASE_URL + '/api/add-certificate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-admin-password': currentPassword
+                    },
+                    body: JSON.stringify(payload)
+                });
+            })
             .then(function(response) {
                 return response.json().then(function(result) {
                     return { status: response.status, ok: response.ok, result: result };
@@ -313,7 +348,7 @@ const adminHtml = `<!DOCTYPE html>
                 if (resData.ok) {
                     messageDiv.style.color = 'green';
                     messageDiv.innerText = 'Saved to database successfully!';
-                    viewCertLink.innerHTML = '<a href="/certificate/' + encodeURIComponent(certVal) + '" target="_blank" class="view-btn">View & Print Certificate</a>';
+                    viewCertLink.innerHTML = '<a href="/certificate/' + encodeURIComponent(certVal) + '" target="_blank" class="view-btn">View & Share Certificate Link</a>';
                     viewCertLink.style.display = 'block';
                     addCertificateForm.reset();
                 } else if (resData.status === 401) {
@@ -323,9 +358,9 @@ const adminHtml = `<!DOCTYPE html>
                     messageDiv.innerText = 'Error: ' + ((resData.result && resData.result.error) || 'Could not save!');
                 }
             })
-            .catch(function() {
+            .catch(function(err) {
                 messageDiv.style.color = 'red';
-                messageDiv.innerText = 'Unable to connect to the server!';
+                messageDiv.innerText = 'Unable to save record: ' + (err.message || 'Network error');
             })
             .finally(function() {
                 submitBtn.disabled = false;
@@ -387,6 +422,36 @@ app.get('/certificate/:certificate_no', async (req, res) => {
     const fullVerifyUrl = protocol + '://' + host + '/certificate/' + encodeURIComponent(cert.certificate_no);
     const qrImageUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=140x140&margin=4&data=' + encodeURIComponent(fullVerifyUrl);
 
+    // আপলোড করা আসল সার্টিফিকেট বা লোগো ডিসপ্লে
+    let documentPreviewHtml = '';
+    if (cert.document_file) {
+      if (cert.document_mime_type === 'application/pdf') {
+        documentPreviewHtml = `
+          <div class="uploaded-doc-container">
+            <embed src="${cert.document_file}" type="application/pdf" width="100%" height="450px" style="border: 1px solid #cbd5e0; border-radius: 4px;" />
+            <div style="margin-top: 8px;">
+              <a href="${cert.document_file}" download="Trademark-Certificate-${safeCertNo}.pdf" class="doc-download-btn">Download Original Certificate PDF</a>
+            </div>
+          </div>
+        `;
+      } else {
+        documentPreviewHtml = `
+          <div class="uploaded-doc-container">
+            <img src="${cert.document_file}" alt="Original Certificate" class="uploaded-doc-img">
+            <div style="margin-top: 8px;">
+              <a href="${cert.document_file}" download="Trademark-${safeCertNo}.png" class="doc-download-btn">View / Download Full Document</a>
+            </div>
+          </div>
+        `;
+      }
+    } else if (cert.logo_url) {
+      documentPreviewHtml = `
+        <div class="center-logo-box">
+          <img src="${escapeHtml(cert.logo_url)}" alt="${safeTrademarkName}" onerror="this.parentElement.style.display='none';">
+        </div>
+      `;
+    }
+
     const verifiedSignatureHtml = cert.verified_by_sign
       ? '<div class="pen-signature">' + escapeHtml(cert.verified_by_sign) + '</div>'
       : `<svg class="pen-svg" viewBox="0 0 180 45" xmlns="http://www.w3.org/2000/svg">
@@ -400,12 +465,6 @@ app.get('/certificate/:certificate_no', async (req, res) => {
            <path d="M18 29 C32 10, 46 34, 62 19 C74 8, 84 33, 102 22 C116 15, 128 30, 158 20" fill="none" stroke="#102a56" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
            <path d="M70 35 C96 32, 124 32, 150 30" fill="none" stroke="#102a56" stroke-width="0.8" stroke-linecap="round" opacity="0.75"/>
          </svg>`;
-
-    const centerLogoHtml = cert.logo_url
-      ? `<div class="center-logo-box">
-           <img src="${escapeHtml(cert.logo_url)}" alt="${safeTrademarkName}" onerror="this.parentElement.style.display='none';">
-         </div>`
-      : '';
 
     const legalNoticeHtml = cert.custom_notice
       ? '<div class="legal-box"><strong>Legal Notice:</strong><br>' + escapeHtml(cert.custom_notice).replace(/\n/g, '<br>') + '</div>'
@@ -573,6 +632,36 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             letter-spacing: 0.5px;
         }
 
+        .uploaded-doc-container {
+            margin: 16px auto;
+            max-width: 90%;
+            background: #fff;
+            padding: 10px;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            text-align: center;
+        }
+        .uploaded-doc-img {
+            max-width: 100%;
+            max-height: 480px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+        }
+        .doc-download-btn {
+            display: inline-block;
+            background: #1a365d;
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .doc-download-btn:hover { background: #2b6cb0; }
+
         .center-logo-box {
             margin: 16px auto;
             padding: 12px 20px;
@@ -735,7 +824,7 @@ app.get('/certificate/:certificate_no', async (req, res) => {
                 </p>
             </div>
 
-            ${centerLogoHtml}
+            ${documentPreviewHtml}
 
             ${legalNoticeHtml}
 
@@ -804,6 +893,8 @@ app.post('/api/add-certificate', async (req, res) => {
       status,
       organization_name,
       logo_url,
+      document_file,
+      document_mime_type,
       verified_by_sign,
       authorized_sign,
       custom_notice
@@ -818,6 +909,8 @@ app.post('/api/add-certificate', async (req, res) => {
       status,
       organization_name,
       logo_url,
+      document_file,
+      document_mime_type,
       verified_by_sign,
       authorized_sign,
       custom_notice
