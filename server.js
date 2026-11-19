@@ -6,7 +6,7 @@ const path = require('path');
 
 const app = express();
 
-// মিডলওয়্যার (Middleware)
+// মিডলওয়্যার (Middleware)
 app.use(express.json());
 app.use(cors());
 
@@ -66,7 +66,7 @@ app.get('/', async (req, res) => {
   }
 });
 
-// অ্যাডমিন প্যানেল রাউট
+// অ্যাডমিন প্যানেল রাউট (index.html লোড করার জন্য)
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
@@ -80,8 +80,37 @@ app.post('/api/add-certificate', async (req, res) => {
     res.status(201).json({ message: 'Certificate saved successfully', data: newCertificate });
   } catch (error) {
     if (error.code === 11000) {
-      return res.status(409).json({ error: 'এই সার্টিফিকেট নম্বরটি আগে থেকেই রয়েছে' });
+      return res.status(409).json({ error: 'এই সার্টিফিকেট নম্বরটি আগে থেকেই রয়েছে' });
     }
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ফিচার ১: সার্টিফিকেট নম্বর দিয়ে নির্দিষ্ট তথ্য খোঁজার API
+app.get('/api/certificate/:certificate_no', async (req, res) => {
+  try {
+    await connectDB();
+    const certificate = await Trademark.findOne({
+      certificate_no: req.params.certificate_no
+    });
+
+    if (!certificate) {
+      return res.status(404).json({ error: 'এই সার্টিফিকেট নম্বরটি পাওয়া যায়নি' });
+    }
+
+    res.status(200).json({ success: true, data: certificate });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ফিচার ২: ডেটাবেজের সব ট্রেডমার্ক তালিকা দেখার API
+app.get('/api/certificates', async (req, res) => {
+  try {
+    await connectDB();
+    const certificates = await Trademark.find().sort({ issue_date: -1 });
+    res.status(200).json({ count: certificates.length, data: certificates });
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
