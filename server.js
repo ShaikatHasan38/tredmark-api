@@ -108,13 +108,13 @@ const adminHtml = `<!DOCTYPE html>
         <h2>ট্রেডমার্ক এন্ট্রি ও কাস্টমাইজেশন</h2>
         <form id="addCertificateForm">
             <label for="certNo">সার্টিফিকেট নাম্বার *</label>
-            <input type="text" id="certNo" placeholder="যেমন: TM-762 বা 193377" required>
+            <input type="text" id="certNo" placeholder="যেমন: TM-58246 বা 193377" required>
 
             <label for="serialNo">সিরিয়াল নং / Serial No. (ঐচ্ছিক)</label>
-            <input type="text" id="serialNo" placeholder="যেমন: 57266 (ফাঁকা রাখলে স্বয়ংক্রিয়ভাবে বসবে)">
+            <input type="text" id="serialNo" placeholder="যেমন: 58276 (ফাঁকা রাখলে স্বয়ংক্রিয়ভাবে বসবে)">
 
             <label for="regNo">রেজিস্ট্রেশন নং / Registration No. (ঐচ্ছিক)</label>
-            <input type="text" id="regNo" placeholder="যেমন: REG-193377 (ফাঁকা রাখলে স্বয়ংক্রিয়ভাবে বসবে)">
+            <input type="text" id="regNo" placeholder="যেমন: REG-58267 (ফাঁকা রাখলে স্বয়ংক্রিয়ভাবে বসবে)">
 
             <label for="ownerName">মালিকের নাম / স্বত্বাধিকারী *</label>
             <input type="text" id="ownerName" placeholder="যেমন: Shaikat Hasan" required>
@@ -376,7 +376,6 @@ app.get('/certificate/:certificate_no', async (req, res) => {
     const fullVerifyUrl = protocol + '://' + host + '/certificate/' + encodeURIComponent(cert.certificate_no);
     const qrImageUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=140x140&margin=4&data=' + encodeURIComponent(fullVerifyUrl);
 
-    // চিকন কলমের লেখার মতো সাইন
     const verifiedSignatureHtml = cert.verified_by_sign
       ? '<div class="pen-signature">' + cert.verified_by_sign + '</div>'
       : `<svg class="pen-svg" viewBox="0 0 180 45" xmlns="http://www.w3.org/2000/svg">
@@ -391,7 +390,6 @@ app.get('/certificate/:certificate_no', async (req, res) => {
            <path d="M70 35 C96 32, 124 32, 150 30" fill="none" stroke="#102a56" stroke-width="0.8" stroke-linecap="round" opacity="0.75"/>
          </svg>`;
 
-    // মাঝে বড় করে প্রদর্শিত ব্র্যান্ড লোগো (লোগো লিংক থাকলে দেখাবে, নষ্ট হলে হাইড হবে)
     const centerLogoHtml = cert.logo_url
       ? `<div class="center-logo-box">
            <img src="${cert.logo_url}" alt="${cert.trademark_name}" onerror="this.parentElement.style.display='none';">
@@ -412,8 +410,8 @@ app.get('/certificate/:certificate_no', async (req, res) => {
       ? '<div class="warning-box"><strong>নোট ও সতর্কতা / Note & Warning:</strong><br>' + cert.custom_notice.replace(/\n/g, '<br>') + '</div>'
       : `<div class="warning-box">
             <strong>স্বত্ব ও নোট / Proprietary Note:</strong><br>
-            এই নথিতে উল্লিখিত নাম, ট্রেডমার্ক ও সংশ্লিষ্ট লোগো স্বত্বাধিকারী কর্তৃক সংরক্ষিত। পূর্বানুমোদন ব্যতিরেকে এর অননুমোদিত ব্যবহার, অনুকরণ বা নকল করা সম্পূর্ণ নিষিদ্ধ। মালিকানা বা ঠিকানায় কোনো পরিবর্তন হলে যথাযথ কর্তৃপক্ষকে অবহিত করতে হবে।<br>
-            <em>Unauthorized copying, reproduction, or misuse of this brand identity is strictly prohibited. Any change of ownership or particulars should be promptly recorded.</em>
+            এই নথিতে উল্লিখিত ট্রেডমার্ক চিহ্ন ও স্বত্ব স্বত্বাধিকারীর অনুকূলে সংরক্ষিত। অনুমতি ব্যতিরেকে এর অননুমোদিত ব্যবহার, নকল বা অনুকরণ নিষিদ্ধ। মালিকানা বা নিবন্ধন সংক্রান্ত কোনো পরিবর্তন হলে যথাযথ রেজিস্ট্রি আপডেট গ্রহণ করতে হবে।<br>
+            <em>Rights in this trademark representation are reserved to the proprietor. Unauthorized reproduction or infringement is prohibited; any change of ownership or details should be duly recorded.</em>
          </div>`;
 
     const orgHeader = cert.organization_name || 'BRAND & TRADEMARK REGISTRY RECORD';
@@ -423,7 +421,7 @@ app.get('/certificate/:certificate_no', async (req, res) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Certificate Record - ${cert.certificate_no}</title>
+    <title>Certificate of Registration of Trademark - ${cert.certificate_no}</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;500&family=Cinzel:wght@600;700;800;900&family=Noto+Serif+Bengali:wght@400;600;700&display=swap');
 
@@ -572,7 +570,6 @@ app.get('/certificate/:certificate_no', async (req, res) => {
             text-align: justify;
         }
 
-        /* মাঝে বড় ব্র্যান্ড লোগো শোকেস */
         .center-logo-box {
             margin: 16px auto;
             padding: 12px 20px;
@@ -798,16 +795,16 @@ app.get('/certificate/:certificate_no', async (req, res) => {
 
             <div class="header-top">${orgHeader}</div>
             <h1 class="main-title-bn">ট্রেডমার্ক নিবন্ধন ও ভেরিফিকেশন সনদ</h1>
-            <div class="main-title-en">Certificate of Trademark Registration</div>
+            <div class="main-title-en">Certificate of Registration of Trademark</div>
 
             <div class="ref-date-bar">
-                <span>রেজিস্ট্রেশন নং / Reg. No.: <span class="handwritten-inline-no">${displayRegNo}</span></span>
+                <span>রেজিস্ট্রেশন নং / Trademark No.: <span class="handwritten-inline-no">${displayRegNo}</span></span>
                 <span>তারিখ / Date: <strong>${formattedDateEn}</strong></span>
             </div>
 
             <div class="proposal-lead">
-                এতদ্বারা প্রত্যায়ন ও রেকর্ডভুক্ত করা যাচ্ছে যে, <strong>${cert.owner_name}</strong>-এর নামে <strong>${cert.trademark_name}</strong> ট্রেডমার্ক/ব্র্যান্ডের নিবন্ধন ও সংশ্লিষ্ট তথ্য ডাটাবেইজে আনুষ্ঠানিকভাবে যাচাই ও সংরক্ষণ করা হয়েছে।<br>
-                <em>This is to certify that the trademark / brand representation <strong>${cert.trademark_name}</strong> has been recorded and verified in the name of <strong>${cert.owner_name}</strong> under Certificate No. <strong>${cert.certificate_no}</strong> (${displayRegNo}) as of <strong>${formattedDateEn}</strong>.</em>
+                এতদ্বারা প্রত্যায়ন করা যাচ্ছে যে, যে ট্রেডমার্কের নিবন্ধন ও প্রতিনিধিত্ব এই নথির সাথে সংযুক্ত রয়েছে, তা <strong>${cert.owner_name}</strong>-এর নামে <strong>${cert.trademark_name}</strong> ট্রেডমার্ক হিসেবে রেজিস্ট্রেশন নং <strong>${displayRegNo}</strong> এবং সার্টিফিকেট নং <strong>${cert.certificate_no}</strong>-এর অধীনে <strong>${formattedDateEn}</strong> তারিখের প্রেক্ষিতে নিবন্ধন ও রেকর্ডভুক্ত করা হয়েছে।<br>
+                <em>Certified that the Trademark of which a representation is annexed hereto has been registered in the name of <strong>${cert.owner_name}</strong> for the mark <strong>${cert.trademark_name}</strong> under Registration No. <strong>${displayRegNo}</strong> (Certificate No. <strong>${cert.certificate_no}</strong>) as of the date <strong>${formattedDateEn}</strong>.</em>
             </div>
 
             ${centerLogoHtml}
@@ -843,8 +840,8 @@ app.get('/certificate/:certificate_no', async (req, res) => {
 
             <div class="bottom-meta-row">
                 <div class="statement-text">
-                    এই নথিটি একটি সংরক্ষিত অফিশিয়াল রেকর্ড হিসেবে গণ্য হবে। যেকোনো সময় এর বৈধতা যাচাই করতে অনলাইন পোর্টালে সার্টিফিকেট নম্বর দিয়ে অনুসন্ধান করা যাবে অথবা QR কোড স্ক্যান করা যাবে।<br>
-                    <em>This document serves as an authentic record. Validity and status can be verified anytime online using the certificate number or by scanning the QR code.</em>
+                    এই নিবন্ধনটি সংরক্ষিত রেজিস্ট্রি রেকর্ড অনুযায়ী বৈধ ও নবায়নযোগ্য হিসেবে বিবেচিত হবে এবং সার্টিফিকেট নম্বর বা QR কোড স্ক্যানের মাধ্যমে যেকোনো সময় অনলাইনে যাচাই করা যাবে।<br>
+                    <em>This registration is recorded in the register subject to applicable renewal terms and may be verified anytime online via the certificate number or QR code.</em>
                 </div>
                 <div class="qr-box">
                     <img src="${qrImageUrl}" alt="Verification QR Code" onerror="this.parentElement.style.display='none';">
