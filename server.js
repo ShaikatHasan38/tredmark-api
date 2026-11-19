@@ -140,66 +140,67 @@ const adminHtml = `<!DOCTYPE html>
 </div>
 
 <script>
-    const API_BASE_URL = window.location.origin;
-    const PASS_STORAGE_KEY = 'tredmark_admin_token';
+    var API_BASE_URL = window.location.origin;
+    var PASS_STORAGE_KEY = 'tredmark_admin_token';
 
-    const loginSection = document.getElementById('loginSection');
-    const adminSection = document.getElementById('adminSection');
-    const loginForm = document.getElementById('loginForm');
-    const loginBtn = document.getElementById('loginBtn');
-    const loginMessage = document.getElementById('loginMessage');
-    const adminPasswordInput = document.getElementById('adminPassword');
-    const addCertificateForm = document.getElementById('addCertificateForm');
-    const submitBtn = document.getElementById('submitBtn');
-    const messageDiv = document.getElementById('message');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const viewCertLink = document.getElementById('viewCertLink');
+    var loginSection = document.getElementById('loginSection');
+    var adminSection = document.getElementById('adminSection');
+    var loginForm = document.getElementById('loginForm');
+    var loginBtn = document.getElementById('loginBtn');
+    var loginMessage = document.getElementById('loginMessage');
+    var adminPasswordInput = document.getElementById('adminPassword');
+    var addCertificateForm = document.getElementById('addCertificateForm');
+    var submitBtn = document.getElementById('submitBtn');
+    var messageDiv = document.getElementById('message');
+    var logoutBtn = document.getElementById('logoutBtn');
+    var viewCertLink = document.getElementById('viewCertLink');
 
     function showAdminPanel() {
         loginSection.style.display = 'none';
         adminSection.style.display = 'block';
     }
 
-    function showLoginPanel(msg = '', color = 'red') {
+    function showLoginPanel(msg, color) {
         sessionStorage.removeItem(PASS_STORAGE_KEY);
         adminSection.style.display = 'none';
         loginSection.style.display = 'block';
-        loginMessage.style.color = color;
-        loginMessage.innerText = msg;
+        loginMessage.style.color = color || 'red';
+        loginMessage.innerText = msg || '';
     }
 
-    async function verifyPassword(password) {
-        return fetch(`${API_BASE_URL}/api/admin-login`, {
+    function verifyPassword(password) {
+        return fetch(API_BASE_URL + '/api/admin-login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'x-admin-password': password
             },
-            body: JSON.stringify({ password })
+            body: JSON.stringify({ password: password })
         });
     }
 
-    (async function initSession() {
-        const savedPass = sessionStorage.getItem(PASS_STORAGE_KEY);
+    (function initSession() {
+        var savedPass = sessionStorage.getItem(PASS_STORAGE_KEY);
         if (!savedPass) {
-            showLoginPanel('');
+            showLoginPanel('', 'red');
             return;
         }
-        try {
-            const res = await verifyPassword(savedPass);
-            if (res.ok) {
-                showAdminPanel();
-            } else {
-                showLoginPanel('');
-            }
-        } catch (err) {
-            showLoginPanel('');
-        }
+        verifyPassword(savedPass)
+            .then(function(res) {
+                if (res.ok) {
+                    showAdminPanel();
+                } else {
+                    showLoginPanel('', 'red');
+                }
+            })
+            .catch(function() {
+                showLoginPanel('', 'red');
+            });
     })();
 
-    loginForm.addEventListener('submit', async function(e) {
+    loginForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        const enteredPassword = adminPasswordInput.value.trim();
+        var enteredPassword = adminPasswordInput.value.trim();
         if (!enteredPassword) {
             loginMessage.style.color = 'red';
             loginMessage.innerText = 'অনুগ্রহ করে পাসওয়ার্ড লিখুন';
@@ -210,37 +211,42 @@ const adminHtml = `<!DOCTYPE html>
         loginMessage.style.color = 'blue';
         loginMessage.innerText = 'পাসওয়ার্ড যাচাই হচ্ছে...';
 
-        try {
-            const response = await verifyPassword(enteredPassword);
-            const result = await response.json();
-
-            if (response.ok) {
-                sessionStorage.setItem(PASS_STORAGE_KEY, enteredPassword);
-                adminPasswordInput.value = '';
-                loginMessage.innerText = '';
-                showAdminPanel();
-            } else {
-                showLoginPanel(result.error || 'ভুল পাসওয়ার্ড! আবার চেষ্টা করুন।', 'red');
-            }
-        } catch (error) {
-            loginMessage.style.color = 'red';
-            loginMessage.innerText = '❌ সার্ভারের সাথে কানেক্ট করা যাচ্ছে না!';
-        } finally {
-            loginBtn.disabled = false;
-        }
+        verifyPassword(enteredPassword)
+            .then(function(response) {
+                return response.json().then(function(result) {
+                    return { ok: response.ok, result: result };
+                });
+            })
+            .then(function(data) {
+                if (data.ok) {
+                    sessionStorage.setItem(PASS_STORAGE_KEY, enteredPassword);
+                    adminPasswordInput.value = '';
+                    loginMessage.innerText = '';
+                    showAdminPanel();
+                } else {
+                    showLoginPanel((data.result && data.result.error) || 'ভুল পাসওয়ার্ড! আবার চেষ্টা করুন।', 'red');
+                }
+            })
+            .catch(function() {
+                loginMessage.style.color = 'red';
+                loginMessage.innerText = '❌ সার্ভারের সাথে কানেক্ট করা যাচ্ছে না!';
+            })
+            .finally(function() {
+                loginBtn.disabled = false;
+            });
     });
 
     logoutBtn.addEventListener('click', function() {
         messageDiv.innerText = '';
         viewCertLink.style.display = 'none';
         adminPasswordInput.value = '';
-        showLoginPanel('');
+        showLoginPanel('', 'red');
     });
 
-    addCertificateForm.addEventListener('submit', async function(e) {
+    addCertificateForm.addEventListener('submit', function(e) {
         e.preventDefault();
 
-        const currentPassword = sessionStorage.getItem(PASS_STORAGE_KEY) || '';
+        var currentPassword = sessionStorage.getItem(PASS_STORAGE_KEY) || '';
         if (!currentPassword) {
             showLoginPanel('সেশন শেষ হয়েছে, আবার লগইন করুন।', 'red');
             return;
@@ -251,8 +257,8 @@ const adminHtml = `<!DOCTYPE html>
         messageDiv.innerText = 'ডাটা সেভ হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন...';
         viewCertLink.style.display = 'none';
 
-        const certVal = document.getElementById('certNo').value.trim();
-        const data = {
+        var certVal = document.getElementById('certNo').value.trim();
+        var payload = {
             certificate_no: certVal,
             owner_name: document.getElementById('ownerName').value.trim(),
             trademark_name: document.getElementById('tmName').value.trim(),
@@ -262,36 +268,40 @@ const adminHtml = `<!DOCTYPE html>
             custom_notice: document.getElementById('customNotice').value.trim()
         };
 
-        try {
-            const response = await fetch(`${API_BASE_URL}/api/add-certificate`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-admin-password': currentPassword
-                },
-                body: JSON.stringify(data)
-            });
-
-            const result = await response.json();
-
-            if (response.ok) {
-                messageDiv.style.color = 'green';
-                messageDiv.innerText = '✅ সফলভাবে ডাটাবেইজে যোগ করা হয়েছে!';
-                viewCertLink.innerHTML = `<a href="/certificate/${encodeURIComponent(certVal)}" target="_blank" class="view-btn">📄 সার্টিফিকেট দেখুন ও প্রিন্ট করুন</a>`;
-                viewCertLink.style.display = 'block';
-                addCertificateForm.reset();
-            } else if (response.status === 401) {
-                showLoginPanel('❌ ভুল পাসওয়ার্ড! আবার লগইন করুন।', 'red');
-            } else {
+        fetch(API_BASE_URL + '/api/add-certificate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-admin-password': currentPassword
+            },
+            body: JSON.stringify(payload)
+        })
+            .then(function(response) {
+                return response.json().then(function(result) {
+                    return { status: response.status, ok: response.ok, result: result };
+                });
+            })
+            .then(function(resData) {
+                if (resData.ok) {
+                    messageDiv.style.color = 'green';
+                    messageDiv.innerText = '✅ সফলভাবে ডাটাবেইজে যোগ করা হয়েছে!';
+                    viewCertLink.innerHTML = '<a href="/certificate/' + encodeURIComponent(certVal) + '" target="_blank" class="view-btn">📄 সার্টিফিকেট দেখুন ও প্রিন্ট করুন</a>';
+                    viewCertLink.style.display = 'block';
+                    addCertificateForm.reset();
+                } else if (resData.status === 401) {
+                    showLoginPanel('❌ ভুল পাসওয়ার্ড! আবার লগইন করুন।', 'red');
+                } else {
+                    messageDiv.style.color = 'red';
+                    messageDiv.innerText = '❌ এরর: ' + ((resData.result && resData.result.error) || 'সেভ করা যায়নি!');
+                }
+            })
+            .catch(function() {
                 messageDiv.style.color = 'red';
-                messageDiv.innerText = '❌ এরর: ' + (result.error || 'সেভ করা যায়নি!');
-            }
-        } catch (error) {
-            messageDiv.style.color = 'red';
-            messageDiv.innerText = '❌ সার্ভারের সাথে কানেক্ট করা যাচ্ছে না!';
-        } finally {
-            submitBtn.disabled = false;
-        }
+                messageDiv.innerText = '❌ সার্ভারের সাথে কানেক্ট করা যাচ্ছে না!';
+            })
+            .finally(function() {
+                submitBtn.disabled = false;
+            });
     });
 </script>
 </body>
@@ -340,13 +350,11 @@ app.get('/certificate/:certificate_no', async (req, res) => {
 
     const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
     const host = req.get('host');
-    const fullVerifyUrl = `${protocol}://${host}/certificate/${encodeURIComponent(cert.certificate_no)}`;
-    const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&margin=4&data=${encodeURIComponent(fullVerifyUrl)}`;
+    const fullVerifyUrl = protocol + '://' + host + '/certificate/' + encodeURIComponent(cert.certificate_no);
+    const qrImageUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=140x140&margin=4&data=' + encodeURIComponent(fullVerifyUrl);
 
     const topLogoHtml = cert.logo_url
-      ? `<div style="text-align: center; margin-bottom: 10px;">
-           <img src="${cert.logo_url}" alt="Logo" style="max-height: 70px; max-width: 160px; object-fit: contain;" onerror="this.style.display='none';">
-         </div>`
+      ? '<div style="text-align: center; margin-bottom: 10px;"><img src="' + cert.logo_url + '" alt="Logo" style="max-height: 70px; max-width: 160px; object-fit: contain;" onerror="this.style.display=\'none\';"></div>'
       : '';
 
     const defaultGoldSealHtml = `
@@ -360,17 +368,11 @@ app.get('/certificate/:certificate_no', async (req, res) => {
     `;
 
     const bottomSealHtml = cert.logo_url
-      ? `<div style="position: relative; display: inline-block;">
-           <img src="${cert.logo_url}" alt="Seal" style="max-height: 82px; max-width: 82px; object-fit: contain; border-radius: 50%; border: 3px double #c59b27; padding: 3px; background: #fff;" onerror="this.style.display='none'; document.getElementById('fallback-seal').style.display='flex';">
-           <div id="fallback-seal" style="display: none;">${defaultGoldSealHtml}</div>
-         </div>`
+      ? '<div style="position: relative; display: inline-block;"><img src="' + cert.logo_url + '" alt="Seal" style="max-height: 82px; max-width: 82px; object-fit: contain; border-radius: 50%; border: 3px double #c59b27; padding: 3px; background: #fff;" onerror="this.style.display=\'none\'; document.getElementById(\'fallback-seal\').style.display=\'flex\';"><div id="fallback-seal" style="display: none;">' + defaultGoldSealHtml + '</div></div>'
       : defaultGoldSealHtml;
 
     const warningNoticeHtml = cert.custom_notice
-      ? `<div class="warning-box">
-            <strong>সতর্কতা / Proprietary Warning Notice:</strong><br>
-            ${cert.custom_notice.replace(/\n/g, '<br>')}
-         </div>`
+      ? '<div class="warning-box"><strong>সতর্কতা / Proprietary Warning Notice:</strong><br>' + cert.custom_notice.replace(/\n/g, '<br>') + '</div>'
       : `<div class="warning-box">
             <strong>স্বত্ব ও আইনি সতর্কতা / Legal Warning & Notice:</strong><br>
             এই নথিতে উল্লিখিত নাম, ট্রেডমার্ক ও সংশ্লিষ্ট লোগো স্বত্বাধিকারী কর্তৃক সংরক্ষিত। পূর্বানুমোদন ব্যতিরেকে কোনো ব্যক্তি বা প্রতিষ্ঠান কর্তৃক এর অননুমোদিত ব্যবহার, অনুকরণ বা নকল করা সম্পূর্ণ নিষিদ্ধ এবং আইনগত লঙ্ঘনমূলক আচরণ বলে গণ্য হবে।<br>
