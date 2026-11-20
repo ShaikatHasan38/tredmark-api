@@ -306,46 +306,22 @@ const adminHtml = `<!DOCTYPE html>
         });
     }
 
-    function renderStatusBadge(status) {
+    function createBadgeEl(status) {
+        var span = document.createElement('span');
         if (status === 'Approved') {
-            return '<span class="badge badge-approved">Approved</span>';
+            span.className = 'badge badge-approved';
+            span.innerText = 'Approved';
+        } else if (status === 'Rejected') {
+            span.className = 'badge badge-rejected';
+            span.innerText = 'Rejected';
+        } else {
+            span.className = 'badge badge-pending';
+            span.innerText = 'Pending';
         }
-        if (status === 'Rejected') {
-            return '<span class="badge badge-rejected">Rejected</span>';
-        }
-        return '<span class="badge badge-pending">Pending</span>';
+        return span;
     }
 
-    function loadUsersQueue(password) {
-        var pass = password || sessionStorage.getItem(PASS_STORAGE_KEY) || '';
-        fetch(API_BASE_URL + '/api/users', {
-            headers: { 'x-admin-password': pass }
-        })
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            if (!data.users || data.users.length === 0) {
-                usersList.innerHTML = '<div class="user-meta">No registered users yet.</div>';
-                return;
-            }
-            usersList.innerHTML = data.users.map(function(u) {
-                return '<div class="user-item">' +
-                    '<div class="user-meta">' +
-                        '<strong>' + u.full_name + '</strong> (' + u.email + ')<br>' +
-                        renderStatusBadge(u.approval_status) +
-                    '</div>' +
-                    '<div class="mini-actions">' +
-                        '<button type="button" class="approve-btn" onclick="updateUserApproval(\'' + u._id + '\', \'Approved\')">Approve</button>' +
-                        '<button type="button" class="reject-btn" onclick="updateUserApproval(\'' + u._id + '\', \'Rejected\')">Reject</button>' +
-                    '</div>' +
-                '</div>';
-            }).join('');
-        })
-        .catch(function() {
-            usersList.innerHTML = '<div class="user-meta">Could not load users list.</div>';
-        });
-    }
-
-    window.updateUserApproval = function(userId, newStatus) {
+    function updateUserApproval(userId, newStatus) {
         var pass = sessionStorage.getItem(PASS_STORAGE_KEY) || '';
         fetch(API_BASE_URL + '/api/users/' + encodeURIComponent(userId) + '/status', {
             method: 'PATCH',
@@ -359,7 +335,75 @@ const adminHtml = `<!DOCTYPE html>
         .then(function() {
             loadUsersQueue(pass);
         });
-    };
+    }
+
+    function loadUsersQueue(password) {
+        var pass = password || sessionStorage.getItem(PASS_STORAGE_KEY) || '';
+        fetch(API_BASE_URL + '/api/users', {
+            headers: { 'x-admin-password': pass }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            usersList.innerHTML = '';
+            if (!data.users || data.users.length === 0) {
+                var emptyDiv = document.createElement('div');
+                emptyDiv.className = 'user-meta';
+                emptyDiv.innerText = 'No registered users yet.';
+                usersList.appendChild(emptyDiv);
+                return;
+            }
+            data.users.forEach(function(u) {
+                var row = document.createElement('div');
+                row.className = 'user-item';
+
+                var meta = document.createElement('div');
+                meta.className = 'user-meta';
+
+                var nameStrong = document.createElement('strong');
+                nameStrong.innerText = u.full_name;
+                meta.appendChild(nameStrong);
+
+                var emailText = document.createTextNode(' (' + u.email + ')');
+                meta.appendChild(emailText);
+
+                meta.appendChild(document.createElement('br'));
+                meta.appendChild(createBadgeEl(u.approval_status));
+
+                var actions = document.createElement('div');
+                actions.className = 'mini-actions';
+
+                var approveBtn = document.createElement('button');
+                approveBtn.type = 'button';
+                approveBtn.className = 'approve-btn';
+                approveBtn.innerText = 'Approve';
+                approveBtn.addEventListener('click', function() {
+                    updateUserApproval(u._id, 'Approved');
+                });
+
+                var rejectBtn = document.createElement('button');
+                rejectBtn.type = 'button';
+                rejectBtn.className = 'reject-btn';
+                rejectBtn.innerText = 'Reject';
+                rejectBtn.addEventListener('click', function() {
+                    updateUserApproval(u._id, 'Rejected');
+                });
+
+                actions.appendChild(approveBtn);
+                actions.appendChild(rejectBtn);
+
+                row.appendChild(meta);
+                row.appendChild(actions);
+                usersList.appendChild(row);
+            });
+        })
+        .catch(function() {
+            usersList.innerHTML = '';
+            var errDiv = document.createElement('div');
+            errDiv.className = 'user-meta';
+            errDiv.innerText = 'Could not load users list.';
+            usersList.appendChild(errDiv);
+        });
+    }
 
     var savedPass = sessionStorage.getItem(PASS_STORAGE_KEY);
     if (savedPass) {
