@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 const cors = require('cors');
 
 const app = express();
@@ -53,6 +54,21 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const derivedKey = crypto.scryptSync(password, salt, 64).toString('hex');
+  return `${salt}:${derivedKey}`;
+}
+
+function verifyPasswordHash(password, storedHash) {
+  if (!storedHash || !storedHash.includes(':')) return false;
+  const [salt, originalKey] = storedHash.split(':');
+  const derivedBuffer = crypto.scryptSync(password, salt, 64);
+  const originalBuffer = Buffer.from(originalKey, 'hex');
+  if (derivedBuffer.length !== originalBuffer.length) return false;
+  return crypto.timingSafeEqual(derivedBuffer, originalBuffer);
+}
+
 const trademarkSchema = new mongoose.Schema({
   certificate_no: { type: String, required: true, unique: true },
   trademark_name: { type: String, required: true },
@@ -63,7 +79,20 @@ const trademarkSchema = new mongoose.Schema({
   issue_date: { type: Date, default: Date.now }
 });
 
+const userSchema = new mongoose.Schema({
+  full_name: { type: String, required: true, trim: true },
+  email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+  password_hash: { type: String, required: true },
+  approval_status: {
+    type: String,
+    enum: ['Pending', 'Approved', 'Rejected'],
+    default: 'Pending'
+  },
+  created_at: { type: Date, default: Date.now }
+});
+
 const Trademark = mongoose.model('Trademark', trademarkSchema);
+const User = mongoose.model('User', userSchema);
 
 function isValidAdminPassword(req) {
   const expectedPassword = process.env.ADMIN_PASSWORD;
@@ -79,33 +108,74 @@ const adminHtml = `<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - Brand Registry Portal</title>
+    <title>Admin & Registration Portal</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f1f5f9; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
-        .container { background: white; padding: 28px; border-radius: 10px; box-shadow: 0 6px 20px rgba(0,0,0,0.08); width: 100%; max-width: 450px; box-sizing: border-box; }
-        h2 { text-align: center; color: #14532d; margin-top: 0; margin-bottom: 20px; }
+        .container { background: white; padding: 28px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.08); width: 100%; max-width: 520px; box-sizing: border-box; }
+        h2 { text-align: center; color: #14532d; margin-top: 0; margin-bottom: 16px; }
+        .mode-tabs { display: flex; gap: 8px; margin-bottom: 18px; }
+        .tab-btn { flex: 1; padding: 9px; border: 1px solid #cbd5e1; background: #f8fafc; color: #1e293b; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13.5px; }
+        .tab-btn.active { background: #15803d; color: #ffffff; border-color: #15803d; }
         label { font-weight: bold; font-size: 13.5px; color: #1e293b; display: block; margin-top: 12px; }
-        input, select, button { width: 100%; padding: 10px; margin: 6px 0; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 14.5px; font-family: inherit; }
-        .file-box { background: #f8fafc; border: 1.5px dashed #94a3b8; padding: 12px; border-radius: 6px; margin-top: 8px; }
-        button { background-color: #15803d; color: white; border: none; cursor: pointer; font-size: 15.5px; font-weight: bold; margin-top: 16px; }
-        button:hover { background-color: #166534; }
-        button:disabled { background-color: #94a3b8; cursor: not-allowed; }
+        input, select, .action-btn { width: 100%; padding: 10px; margin: 6px 0; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 14.5px; font-family: inherit; }
+        .file-box { background: #f8fafc; border: 1.5px dashed #94a3b8; padding: 12px; border-radius: 8px; margin-top: 8px; }
+        .action-btn { background-color: #15803d; color: white; border: none; cursor: pointer; font-size: 15px; font-weight: bold; margin-top: 14px; }
+        .action-btn:hover { background-color: #166534; }
+        .action-btn:disabled { background-color: #94a3b8; cursor: not-allowed; }
         .logout-btn { background-color: #dc2626; margin-top: 8px; }
         .logout-btn:hover { background-color: #b91c1c; }
-        .view-btn { display: inline-block; width: 100%; text-align: center; padding: 10px; background-color: #0f172a; color: white; text-decoration: none; border-radius: 6px; margin-top: 12px; font-weight: bold; box-sizing: border-box; }
-        #message, #loginMessage { text-align: center; margin-top: 14px; font-weight: bold; }
+        .view-btn { display: inline-block; width: 100%; text-align: center; padding: 10px; background-color: #0f172a; color: white; text-decoration: none; border-radius: 8px; margin-top: 12px; font-weight: bold; box-sizing: border-box; }
+        .pending-box { margin-top: 22px; border-top: 1px solid #e2e8f0; padding-top: 16px; }
+        .pending-title { font-size: 15px; font-weight: bold; color: #0f172a; margin-bottom: 10px; }
+        .user-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 8px; background: #f8fafc; flex-wrap: wrap; }
+        .user-meta { font-size: 13px; color: #334155; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: bold; margin-top: 4px; }
+        .badge-pending { background: #fef3c7; color: #92400e; }
+        .badge-approved { background: #dcfce7; color: #166534; }
+        .badge-rejected { background: #fee2e2; color: #991b1b; }
+        .mini-actions { display: flex; gap: 6px; }
+        .approve-btn { background: #15803d; color: #fff; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 12.5px; font-weight: bold; }
+        .reject-btn { background: #dc2626; color: #fff; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 12.5px; font-weight: bold; }
+        .home-link-wrap { text-align: center; margin-top: 14px; }
+        .home-link-wrap a { color: #15803d; text-decoration: none; font-size: 13px; font-weight: bold; }
+        #message, #authMessage { text-align: center; margin-top: 12px; font-weight: bold; font-size: 13.5px; }
     </style>
 </head>
 <body>
 <div class="container">
-    <div id="loginSection">
-        <h2>Portal Admin Login</h2>
-        <form id="loginForm">
-            <label for="adminPassword">Admin Password</label>
-            <input type="password" id="adminPassword" placeholder="Enter admin password" required>
-            <button type="submit" id="loginBtn">Login</button>
-        </form>
-        <div id="loginMessage"></div>
+    <div id="authSection">
+        <div class="mode-tabs">
+            <button type="button" id="tabLogin" class="tab-btn active" onclick="switchAuthTab('login')">Admin Login</button>
+            <button type="button" id="tabSignup" class="tab-btn" onclick="switchAuthTab('signup')">Sign Up / Register</button>
+        </div>
+
+        <div id="loginBox">
+            <h2>Portal Admin Login</h2>
+            <form id="loginForm">
+                <label for="adminPassword">Admin Password</label>
+                <input type="password" id="adminPassword" placeholder="Enter admin password" required>
+                <button type="submit" id="loginBtn" class="action-btn">Login</button>
+            </form>
+        </div>
+
+        <div id="signupBox" style="display: none;">
+            <h2>User Registration</h2>
+            <form id="signupForm">
+                <label for="regName">Full Name *</label>
+                <input type="text" id="regName" placeholder="Enter your full name" required>
+
+                <label for="regEmail">Email Address *</label>
+                <input type="email" id="regEmail" placeholder="name@example.com" required>
+
+                <label for="regPassword">Password *</label>
+                <input type="password" id="regPassword" placeholder="At least 6 characters" minlength="6" required>
+
+                <button type="submit" id="signupBtn" class="action-btn">Submit Registration (Pending Approval)</button>
+            </form>
+        </div>
+
+        <div id="authMessage"></div>
+        <div class="home-link-wrap"><a href="/">&larr; Back to Trademark Portal</a></div>
     </div>
 
     <div id="adminSection" style="display: none;">
@@ -132,11 +202,16 @@ const adminHtml = `<!DOCTYPE html>
                 <input type="file" id="certFile" accept="image/*,application/pdf" required>
             </div>
 
-            <button type="submit" id="submitBtn">Save to Portal Database</button>
+            <button type="submit" id="submitBtn" class="action-btn">Save to Portal Database</button>
             <div id="viewCertLink" style="display:none;"></div>
-            <button type="button" id="logoutBtn" class="logout-btn">Logout</button>
+            <button type="button" id="logoutBtn" class="action-btn logout-btn">Logout</button>
         </form>
         <div id="message"></div>
+
+        <div class="pending-box">
+            <div class="pending-title">Registered Users &amp; Approval Queue</div>
+            <div id="usersList">Loading users...</div>
+        </div>
     </div>
 </div>
 
@@ -144,29 +219,57 @@ const adminHtml = `<!DOCTYPE html>
     var API_BASE_URL = window.location.origin;
     var PASS_STORAGE_KEY = 'tredmark_admin_token';
 
-    var loginSection = document.getElementById('loginSection');
+    var authSection = document.getElementById('authSection');
     var adminSection = document.getElementById('adminSection');
+    var tabLogin = document.getElementById('tabLogin');
+    var tabSignup = document.getElementById('tabSignup');
+    var loginBox = document.getElementById('loginBox');
+    var signupBox = document.getElementById('signupBox');
     var loginForm = document.getElementById('loginForm');
+    var signupForm = document.getElementById('signupForm');
     var loginBtn = document.getElementById('loginBtn');
-    var loginMessage = document.getElementById('loginMessage');
+    var signupBtn = document.getElementById('signupBtn');
+    var authMessage = document.getElementById('authMessage');
     var adminPasswordInput = document.getElementById('adminPassword');
     var addCertificateForm = document.getElementById('addCertificateForm');
     var submitBtn = document.getElementById('submitBtn');
     var messageDiv = document.getElementById('message');
     var logoutBtn = document.getElementById('logoutBtn');
     var viewCertLink = document.getElementById('viewCertLink');
+    var usersList = document.getElementById('usersList');
 
-    function showAdminPanel() {
-        loginSection.style.display = 'none';
+    function switchAuthTab(mode) {
+        authMessage.innerText = '';
+        if (mode === 'signup') {
+            tabSignup.classList.add('active');
+            tabLogin.classList.remove('active');
+            signupBox.style.display = 'block';
+            loginBox.style.display = 'none';
+        } else {
+            tabLogin.classList.add('active');
+            tabSignup.classList.remove('active');
+            loginBox.style.display = 'block';
+            signupBox.style.display = 'none';
+        }
+    }
+
+    if (window.location.hash === '#register' || window.location.hash === '#signup') {
+        switchAuthTab('signup');
+    }
+
+    function showAdminPanel(password) {
+        authSection.style.display = 'none';
         adminSection.style.display = 'block';
+        loadUsersQueue(password);
     }
 
     function showLoginPanel(msg, color) {
         sessionStorage.removeItem(PASS_STORAGE_KEY);
         adminSection.style.display = 'none';
-        loginSection.style.display = 'block';
-        loginMessage.style.color = color || 'red';
-        loginMessage.innerText = msg || '';
+        authSection.style.display = 'block';
+        switchAuthTab('login');
+        authMessage.style.color = color || 'red';
+        authMessage.innerText = msg || '';
     }
 
     function verifyPassword(password) {
@@ -180,16 +283,70 @@ const adminHtml = `<!DOCTYPE html>
         });
     }
 
+    function renderStatusBadge(status) {
+        if (status === 'Approved') {
+            return '<span class="badge badge-approved">Approved</span>';
+        }
+        if (status === 'Rejected') {
+            return '<span class="badge badge-rejected">Rejected</span>';
+        }
+        return '<span class="badge badge-pending">Pending</span>';
+    }
+
+    function loadUsersQueue(password) {
+        var pass = password || sessionStorage.getItem(PASS_STORAGE_KEY) || '';
+        fetch(API_BASE_URL + '/api/users', {
+            headers: { 'x-admin-password': pass }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data.users || data.users.length === 0) {
+                usersList.innerHTML = '<div class="user-meta">No registered users yet.</div>';
+                return;
+            }
+            usersList.innerHTML = data.users.map(function(u) {
+                return '<div class="user-item">' +
+                    '<div class="user-meta">' +
+                        '<strong>' + u.full_name + '</strong> (' + u.email + ')<br>' +
+                        renderStatusBadge(u.approval_status) +
+                    '</div>' +
+                    '<div class="mini-actions">' +
+                        '<button type="button" class="approve-btn" onclick="updateUserApproval(\'' + u._id + '\', \'Approved\')">Approve</button>' +
+                        '<button type="button" class="reject-btn" onclick="updateUserApproval(\'' + u._id + '\', \'Rejected\')">Reject</button>' +
+                    '</div>' +
+                '</div>';
+            }).join('');
+        })
+        .catch(function() {
+            usersList.innerHTML = '<div class="user-meta">Could not load users list.</div>';
+        });
+    }
+
+    window.updateUserApproval = function(userId, newStatus) {
+        var pass = sessionStorage.getItem(PASS_STORAGE_KEY) || '';
+        fetch(API_BASE_URL + '/api/users/' + encodeURIComponent(userId) + '/status', {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-admin-password': pass
+            },
+            body: JSON.stringify({ approval_status: newStatus })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function() {
+            loadUsersQueue(pass);
+        });
+    };
+
     (function initSession() {
         var savedPass = sessionStorage.getItem(PASS_STORAGE_KEY);
         if (!savedPass) {
-            showLoginPanel('', 'red');
             return;
         }
         verifyPassword(savedPass)
             .then(function(res) {
                 if (res.ok) {
-                    showAdminPanel();
+                    showAdminPanel(savedPass);
                 } else {
                     showLoginPanel('', 'red');
                 }
@@ -203,14 +360,14 @@ const adminHtml = `<!DOCTYPE html>
         e.preventDefault();
         var enteredPassword = adminPasswordInput.value.trim();
         if (!enteredPassword) {
-            loginMessage.style.color = 'red';
-            loginMessage.innerText = 'Please enter the admin password';
+            authMessage.style.color = 'red';
+            authMessage.innerText = 'Please enter the admin password';
             return;
         }
 
         loginBtn.disabled = true;
-        loginMessage.style.color = 'blue';
-        loginMessage.innerText = 'Verifying...';
+        authMessage.style.color = 'blue';
+        authMessage.innerText = 'Verifying...';
 
         verifyPassword(enteredPassword)
             .then(function(response) {
@@ -222,19 +379,62 @@ const adminHtml = `<!DOCTYPE html>
                 if (data.ok) {
                     sessionStorage.setItem(PASS_STORAGE_KEY, enteredPassword);
                     adminPasswordInput.value = '';
-                    loginMessage.innerText = '';
-                    showAdminPanel();
+                    authMessage.innerText = '';
+                    showAdminPanel(enteredPassword);
                 } else {
                     showLoginPanel((data.result && data.result.error) || 'Invalid password!', 'red');
                 }
             })
             .catch(function() {
-                loginMessage.style.color = 'red';
-                loginMessage.innerText = 'Connection failed!';
+                authMessage.style.color = 'red';
+                authMessage.innerText = 'Connection failed!';
             })
             .finally(function() {
                 loginBtn.disabled = false;
             });
+    });
+
+    signupForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var fullName = document.getElementById('regName').value.trim();
+        var email = document.getElementById('regEmail').value.trim();
+        var password = document.getElementById('regPassword').value;
+
+        signupBtn.disabled = true;
+        authMessage.style.color = 'blue';
+        authMessage.innerText = 'Submitting registration...';
+
+        fetch(API_BASE_URL + '/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                full_name: fullName,
+                email: email,
+                password: password
+            })
+        })
+        .then(function(response) {
+            return response.json().then(function(result) {
+                return { ok: response.ok, result: result };
+            });
+        })
+        .then(function(data) {
+            if (data.ok) {
+                authMessage.style.color = 'green';
+                authMessage.innerText = data.result.message || 'Registered! Status is Pending admin approval.';
+                signupForm.reset();
+            } else {
+                authMessage.style.color = 'red';
+                authMessage.innerText = (data.result && data.result.error) || 'Registration failed.';
+            }
+        })
+        .catch(function() {
+            authMessage.style.color = 'red';
+            authMessage.innerText = 'Connection failed!';
+        })
+        .finally(function() {
+            signupBtn.disabled = false;
+        });
     });
 
     logoutBtn.addEventListener('click', function() {
@@ -455,12 +655,15 @@ function buildPortalPage(initialSerial, recordData) {
     <style>
         body { margin: 0; font-family: Arial, sans-serif; background: #f3f6f4; color: #1e293b; }
         .top-strip { background: #0f172a; color: #e2e8f0; text-align: center; padding: 7px 12px; font-size: 12.5px; }
-        .navbar { background: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; }
+        .navbar { background: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
         .brand-wrap { display: flex; align-items: center; gap: 10px; }
         .brand-badge { width: 34px; height: 34px; border-radius: 50%; background: #15803d; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 15px; }
         .brand-title { font-weight: bold; font-size: 17px; color: #0f172a; }
         .brand-sub { font-size: 12px; color: #64748b; }
-        .admin-link { text-decoration: none; font-size: 13px; color: #15803d; font-weight: bold; }
+        .nav-actions { display: flex; align-items: center; gap: 10px; }
+        .signup-btn { text-decoration: none; font-size: 13px; background: #15803d; color: #ffffff; padding: 7px 12px; border-radius: 7px; font-weight: bold; }
+        .signup-btn:hover { background: #166534; }
+        .admin-link { text-decoration: none; font-size: 13px; color: #0f172a; border: 1px solid #cbd5e1; padding: 6px 11px; border-radius: 7px; font-weight: bold; }
 
         .hero-banner { background: #15803d; color: #ffffff; padding: 34px 18px; text-align: center; }
         .hero-logo-circle { width: 52px; height: 52px; border-radius: 50%; background: #ffffff; color: #15803d; font-weight: bold; font-size: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; }
@@ -533,7 +736,10 @@ function buildPortalPage(initialSerial, recordData) {
             <div class="brand-sub">Brand Status & Record Lookup</div>
         </div>
     </div>
-    <a href="/admin" class="admin-link">Admin</a>
+    <div class="nav-actions">
+        <a href="/admin#register" class="signup-btn">Sign Up / Registration</a>
+        <a href="/admin" class="admin-link">Admin</a>
+    </div>
 </div>
 
 <div class="hero-banner">
@@ -688,6 +894,114 @@ app.get('/', async (req, res) => {
 
 app.get('/admin', (req, res) => {
   res.send(adminHtml);
+});
+
+app.post('/api/register', async (req, res) => {
+  try {
+    await connectDB();
+    const { full_name, email, password } = req.body;
+
+    if (!full_name || !email || !password || String(password).length < 6) {
+      return res.status(400).json({
+        error: 'Full name, valid email, and password (at least 6 characters) are required'
+      });
+    }
+
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const existing = await User.findOne({ email: normalizedEmail });
+    if (existing) {
+      return res.status(409).json({ error: 'An account with this email already exists' });
+    }
+
+    const newUser = new User({
+      full_name: String(full_name).trim(),
+      email: normalizedEmail,
+      password_hash: hashPassword(String(password)),
+      approval_status: 'Pending'
+    });
+
+    await newUser.save();
+    res.status(201).json({
+      success: true,
+      message: 'Registration submitted! Your account is Pending admin approval.',
+      user: {
+        id: newUser._id,
+        full_name: newUser.full_name,
+        email: newUser.email,
+        approval_status: newUser.approval_status
+      }
+    });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({ error: 'An account with this email already exists' });
+    }
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/login', async (req, res) => {
+  try {
+    await connectDB();
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    const user = await User.findOne({ email: String(email).trim().toLowerCase() });
+    if (!user || !verifyPasswordHash(String(password), user.password_hash)) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    res.status(200).json({
+      success: true,
+      user: {
+        id: user._id,
+        full_name: user.full_name,
+        email: user.email,
+        approval_status: user.approval_status
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/users', async (req, res) => {
+  try {
+    if (!isValidAdminPassword(req)) {
+      return res.status(401).json({ error: 'Valid admin password is required' });
+    }
+    await connectDB();
+    const users = await User.find({}, '-password_hash').sort({ created_at: -1 });
+    res.status(200).json({ count: users.length, users });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.patch('/api/users/:id/status', async (req, res) => {
+  try {
+    if (!isValidAdminPassword(req)) {
+      return res.status(401).json({ error: 'Valid admin password is required' });
+    }
+    await connectDB();
+    const { approval_status } = req.body;
+    if (!['Pending', 'Approved', 'Rejected'].includes(approval_status)) {
+      return res.status(400).json({ error: 'Invalid approval status' });
+    }
+
+    const updated = await User.findByIdAndUpdate(
+      req.params.id,
+      { approval_status },
+      { new: true, select: '-password_hash' }
+    );
+    if (!updated) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.status(200).json({ success: true, user: updated });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 app.get('/trademark/:certificate_no', async (req, res) => {
