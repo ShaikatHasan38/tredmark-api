@@ -94,13 +94,24 @@ const userSchema = new mongoose.Schema({
 const Trademark = mongoose.model('Trademark', trademarkSchema);
 const User = mongoose.model('User', userSchema);
 
-function isValidAdminPassword(req) {
-  const expectedPassword = process.env.ADMIN_PASSWORD;
-  if (!expectedPassword) return true;
+function getProvidedAdminPassword(req) {
+  const headerPass = req.headers['x-admin-password'];
+  if (typeof headerPass === 'string' && headerPass.length > 0) {
+    return headerPass.trim();
+  }
+  if (req.body && typeof req.body.password === 'string') {
+    return req.body.password.trim();
+  }
+  if (req.body && typeof req.body.adminPassword === 'string') {
+    return req.body.adminPassword.trim();
+  }
+  return '';
+}
 
-  const providedPassword =
-    req.headers['x-admin-password'] || (req.body && req.body.adminPassword);
-  return providedPassword === expectedPassword;
+function isValidAdminPassword(req) {
+  const expectedPassword = (process.env.ADMIN_PASSWORD || '').trim();
+  if (!expectedPassword) return true;
+  return getProvidedAdminPassword(req) === expectedPassword;
 }
 
 const adminHtml = `<!DOCTYPE html>
@@ -114,7 +125,7 @@ const adminHtml = `<!DOCTYPE html>
         .container { background: white; padding: 28px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.08); width: 100%; max-width: 520px; box-sizing: border-box; }
         h2 { text-align: center; color: #14532d; margin-top: 0; margin-bottom: 16px; }
         .mode-tabs { display: flex; gap: 8px; margin-bottom: 18px; }
-        .tab-btn { flex: 1; padding: 9px; border: 1px solid #cbd5e1; background: #f8fafc; color: #1e293b; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13.5px; }
+        .tab-btn { flex: 1; padding: 10px; border: 1px solid #cbd5e1; background: #f8fafc; color: #1e293b; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13.5px; }
         .tab-btn.active { background: #15803d; color: #ffffff; border-color: #15803d; }
         label { font-weight: bold; font-size: 13.5px; color: #1e293b; display: block; margin-top: 12px; }
         input, select, .action-btn { width: 100%; padding: 10px; margin: 6px 0; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 14.5px; font-family: inherit; }
@@ -145,8 +156,8 @@ const adminHtml = `<!DOCTYPE html>
 <div class="container">
     <div id="authSection">
         <div class="mode-tabs">
-            <button type="button" id="tabLogin" class="tab-btn active" onclick="switchAuthTab('login')">Admin Login</button>
-            <button type="button" id="tabSignup" class="tab-btn" onclick="switchAuthTab('signup')">Sign Up / Register</button>
+            <button type="button" id="tabLogin" class="tab-btn active">Admin Login</button>
+            <button type="button" id="tabSignup" class="tab-btn">Sign Up / Registration</button>
         </div>
 
         <div id="loginBox">
@@ -170,7 +181,7 @@ const adminHtml = `<!DOCTYPE html>
                 <label for="regPassword">Password *</label>
                 <input type="password" id="regPassword" placeholder="At least 6 characters" minlength="6" required>
 
-                <button type="submit" id="signupBtn" class="action-btn">Submit Registration (Pending Approval)</button>
+                <button type="submit" id="signupBtn" class="action-btn">Register (Pending Approval)</button>
             </form>
         </div>
 
@@ -216,6 +227,7 @@ const adminHtml = `<!DOCTYPE html>
 </div>
 
 <script>
+(function() {
     var API_BASE_URL = window.location.origin;
     var PASS_STORAGE_KEY = 'tredmark_admin_token';
 
@@ -252,6 +264,17 @@ const adminHtml = `<!DOCTYPE html>
             signupBox.style.display = 'none';
         }
     }
+
+    tabLogin.addEventListener('click', function() { switchAuthTab('login'); });
+    tabSignup.addEventListener('click', function() { switchAuthTab('signup'); });
+
+    window.addEventListener('hashchange', function() {
+        if (window.location.hash === '#register' || window.location.hash === '#signup') {
+            switchAuthTab('signup');
+        } else if (window.location.hash === '#login') {
+            switchAuthTab('login');
+        }
+    });
 
     if (window.location.hash === '#register' || window.location.hash === '#signup') {
         switchAuthTab('signup');
@@ -338,23 +361,18 @@ const adminHtml = `<!DOCTYPE html>
         });
     };
 
-    (function initSession() {
-        var savedPass = sessionStorage.getItem(PASS_STORAGE_KEY);
-        if (!savedPass) {
-            return;
-        }
+    var savedPass = sessionStorage.getItem(PASS_STORAGE_KEY);
+    if (savedPass) {
         verifyPassword(savedPass)
             .then(function(res) {
                 if (res.ok) {
                     showAdminPanel(savedPass);
                 } else {
-                    showLoginPanel('', 'red');
+                    sessionStorage.removeItem(PASS_STORAGE_KEY);
                 }
             })
-            .catch(function() {
-                showLoginPanel('', 'red');
-            });
-    })();
+            .catch(function() {});
+    }
 
     loginForm.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -561,6 +579,7 @@ const adminHtml = `<!DOCTYPE html>
                 submitBtn.disabled = false;
             });
     });
+})();
 </script>
 </body>
 </html>`;
@@ -1018,13 +1037,12 @@ app.get('/trademark/:certificate_no', async (req, res) => {
 });
 
 app.post('/api/admin-login', (req, res) => {
-  const expectedPassword = process.env.ADMIN_PASSWORD;
+  const expectedPassword = (process.env.ADMIN_PASSWORD || '').trim();
   if (!expectedPassword) {
     return res.status(200).json({ success: true });
   }
 
-  const providedPassword =
-    req.headers['x-admin-password'] || (req.body && req.body.password);
+  const providedPassword = getProvidedAdminPassword(req);
 
   if (providedPassword === expectedPassword) {
     return res.status(200).json({ success: true });
