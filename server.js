@@ -207,7 +207,7 @@ const adminHtml = `<!DOCTYPE html>
     </div>
 
     <div id="clientSection" style="display: none;">
-        <h2>Client Panel</h2>
+        <h2>Client Panel - Upload Trademark File</h2>
         <div class="client-card">
             <div id="clientWelcomeName" class="client-name">Welcome</div>
             <div id="clientWelcomeMeta" class="client-meta">Status: Approved</div>
@@ -220,12 +220,15 @@ const adminHtml = `<!DOCTYPE html>
             <label for="clientTmName">Trademark / Record Name *</label>
             <input type="text" id="clientTmName" placeholder="e.g. Brand Name" required>
 
+            <label for="clientOwnerName">Proprietor / Owner (Optional)</label>
+            <input type="text" id="clientOwnerName" placeholder="e.g. Owner Name">
+
             <div class="file-box">
                 <label for="clientCertFile" style="margin-top:0;">Choose Tredmark File (Image / PDF) *</label>
                 <input type="file" id="clientCertFile" accept="image/*,application/pdf" required>
             </div>
 
-            <button type="submit" id="clientSubmitBtn" class="action-btn">Submit Record</button>
+            <button type="submit" id="clientSubmitBtn" class="action-btn">Save to Portal Database</button>
             <div id="clientViewLink" style="display:none;"></div>
             <button type="button" id="clientLogoutBtn" class="action-btn logout-btn">Logout</button>
         </form>
@@ -704,10 +707,11 @@ const adminHtml = `<!DOCTYPE html>
         var selectedFile = fileInput.files && fileInput.files[0];
         var certVal = document.getElementById('clientCertNo').value.trim();
         var tmVal = document.getElementById('clientTmName').value.trim();
+        var ownerVal = document.getElementById('clientOwnerName').value.trim() || clientObj.full_name;
 
         clientSubmitBtn.disabled = true;
         clientMessage.style.color = 'blue';
-        clientMessage.innerText = 'Submitting...';
+        clientMessage.innerText = 'Uploading...';
         clientViewLink.style.display = 'none';
 
         readFile(selectedFile)
@@ -719,7 +723,7 @@ const adminHtml = `<!DOCTYPE html>
                         email: clientObj.email,
                         certificate_no: certVal,
                         trademark_name: tmVal,
-                        owner_name: clientObj.full_name,
+                        owner_name: ownerVal,
                         document_file: fileData.base64,
                         document_mime_type: fileData.mimeType
                     })
@@ -733,7 +737,7 @@ const adminHtml = `<!DOCTYPE html>
             .then(function(resData) {
                 if (resData.ok) {
                     clientMessage.style.color = 'green';
-                    clientMessage.innerText = 'Saved successfully!';
+                    clientMessage.innerText = 'Saved to portal database!';
                     var tmPath = '/trademark/' + encodeURIComponent(certVal);
                     var tmUrl = API_BASE_URL + tmPath;
                     clientViewLink.innerHTML = '<a href="' + tmPath + '" target="_blank" class="view-btn">Open Record: ' + tmUrl + '</a>';
@@ -1251,7 +1255,7 @@ app.post('/api/client/add-certificate', async (req, res) => {
 
     const clientUser = await User.findOne({ email: String(email).trim().toLowerCase() });
     if (!clientUser || clientUser.approval_status !== 'Approved') {
-      return res.status(403).json({ error: 'Only approved clients can submit records' });
+      return res.status(403).json({ error: 'Only approved clients can upload records' });
     }
 
     const newCertificate = new Trademark({
