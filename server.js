@@ -119,13 +119,13 @@ const adminHtml = `<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin & Registration Portal</title>
+    <title>Portal Access - Admin & Client</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f1f5f9; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
-        .container { background: white; padding: 28px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.08); width: 100%; max-width: 520px; box-sizing: border-box; }
+        .container { background: white; padding: 28px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.08); width: 100%; max-width: 540px; box-sizing: border-box; }
         h2 { text-align: center; color: #14532d; margin-top: 0; margin-bottom: 16px; }
-        .mode-tabs { display: flex; gap: 8px; margin-bottom: 18px; }
-        .tab-btn { flex: 1; padding: 10px; border: 1px solid #cbd5e1; background: #f8fafc; color: #1e293b; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13.5px; }
+        .mode-tabs { display: flex; gap: 6px; margin-bottom: 18px; flex-wrap: wrap; }
+        .tab-btn { flex: 1; min-width: 110px; padding: 10px; border: 1px solid #cbd5e1; background: #f8fafc; color: #1e293b; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; }
         .tab-btn.active { background: #15803d; color: #ffffff; border-color: #15803d; }
         label { font-weight: bold; font-size: 13.5px; color: #1e293b; display: block; margin-top: 12px; }
         input, select, .action-btn { width: 100%; padding: 10px; margin: 6px 0; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 14.5px; font-family: inherit; }
@@ -136,6 +136,9 @@ const adminHtml = `<!DOCTYPE html>
         .logout-btn { background-color: #dc2626; margin-top: 8px; }
         .logout-btn:hover { background-color: #b91c1c; }
         .view-btn { display: inline-block; width: 100%; text-align: center; padding: 10px; background-color: #0f172a; color: white; text-decoration: none; border-radius: 8px; margin-top: 12px; font-weight: bold; box-sizing: border-box; }
+        .client-card { background: #f0fdf4; border: 1px solid #86efac; padding: 16px; border-radius: 10px; margin-bottom: 14px; }
+        .client-name { font-size: 17px; font-weight: bold; color: #14532d; margin-bottom: 4px; }
+        .client-meta { font-size: 13px; color: #334155; }
         .pending-box { margin-top: 22px; border-top: 1px solid #e2e8f0; padding-top: 16px; }
         .pending-title { font-size: 15px; font-weight: bold; color: #0f172a; margin-bottom: 10px; }
         .user-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 8px; background: #f8fafc; flex-wrap: wrap; }
@@ -149,23 +152,28 @@ const adminHtml = `<!DOCTYPE html>
         .reject-btn { background: #dc2626; color: #fff; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 12.5px; font-weight: bold; }
         .home-link-wrap { text-align: center; margin-top: 14px; }
         .home-link-wrap a { color: #15803d; text-decoration: none; font-size: 13px; font-weight: bold; }
-        #message, #authMessage { text-align: center; margin-top: 12px; font-weight: bold; font-size: 13.5px; }
+        #message, #clientMessage, #authMessage { text-align: center; margin-top: 12px; font-weight: bold; font-size: 13.5px; }
     </style>
 </head>
 <body>
 <div class="container">
     <div id="authSection">
         <div class="mode-tabs">
-            <button type="button" id="tabLogin" class="tab-btn active">Admin Login</button>
-            <button type="button" id="tabSignup" class="tab-btn">Sign Up / Registration</button>
+            <button type="button" id="tabClientLogin" class="tab-btn active">Client Login</button>
+            <button type="button" id="tabSignup" class="tab-btn">Sign Up</button>
+            <button type="button" id="tabAdminLogin" class="tab-btn">Admin Login</button>
         </div>
 
-        <div id="loginBox">
-            <h2>Portal Admin Login</h2>
-            <form id="loginForm">
-                <label for="adminPassword">Admin Password</label>
-                <input type="password" id="adminPassword" placeholder="Enter admin password" required>
-                <button type="submit" id="loginBtn" class="action-btn">Login</button>
+        <div id="clientLoginBox">
+            <h2>Approved Client Panel Login</h2>
+            <form id="clientLoginForm">
+                <label for="clientEmail">Registered Email *</label>
+                <input type="email" id="clientEmail" placeholder="name@example.com" required>
+
+                <label for="clientPassword">Password *</label>
+                <input type="password" id="clientPassword" placeholder="Enter your password" required>
+
+                <button type="submit" id="clientLoginBtn" class="action-btn">Enter Client Panel</button>
             </form>
         </div>
 
@@ -185,8 +193,43 @@ const adminHtml = `<!DOCTYPE html>
             </form>
         </div>
 
+        <div id="adminLoginBox" style="display: none;">
+            <h2>Portal Admin Login</h2>
+            <form id="loginForm">
+                <label for="adminPassword">Admin Password</label>
+                <input type="password" id="adminPassword" placeholder="Enter admin password" required>
+                <button type="submit" id="loginBtn" class="action-btn">Login as Admin</button>
+            </form>
+        </div>
+
         <div id="authMessage"></div>
         <div class="home-link-wrap"><a href="/">&larr; Back to Trademark Portal</a></div>
+    </div>
+
+    <div id="clientSection" style="display: none;">
+        <h2>Client Panel</h2>
+        <div class="client-card">
+            <div id="clientWelcomeName" class="client-name">Welcome</div>
+            <div id="clientWelcomeMeta" class="client-meta">Status: Approved</div>
+        </div>
+
+        <form id="clientAddForm">
+            <label for="clientCertNo">Serial / Trademark Number *</label>
+            <input type="text" id="clientCertNo" placeholder="e.g. TM-205" required>
+
+            <label for="clientTmName">Trademark / Record Name *</label>
+            <input type="text" id="clientTmName" placeholder="e.g. Brand Name" required>
+
+            <div class="file-box">
+                <label for="clientCertFile" style="margin-top:0;">Choose Tredmark File (Image / PDF) *</label>
+                <input type="file" id="clientCertFile" accept="image/*,application/pdf" required>
+            </div>
+
+            <button type="submit" id="clientSubmitBtn" class="action-btn">Submit Record</button>
+            <div id="clientViewLink" style="display:none;"></div>
+            <button type="button" id="clientLogoutBtn" class="action-btn logout-btn">Logout</button>
+        </form>
+        <div id="clientMessage"></div>
     </div>
 
     <div id="adminSection" style="display: none;">
@@ -230,13 +273,30 @@ const adminHtml = `<!DOCTYPE html>
 (function() {
     var API_BASE_URL = window.location.origin;
     var PASS_STORAGE_KEY = 'tredmark_admin_token';
+    var CLIENT_STORAGE_KEY = 'tredmark_approved_client';
 
     var authSection = document.getElementById('authSection');
     var adminSection = document.getElementById('adminSection');
-    var tabLogin = document.getElementById('tabLogin');
+    var clientSection = document.getElementById('clientSection');
+
+    var tabClientLogin = document.getElementById('tabClientLogin');
     var tabSignup = document.getElementById('tabSignup');
-    var loginBox = document.getElementById('loginBox');
+    var tabAdminLogin = document.getElementById('tabAdminLogin');
+
+    var clientLoginBox = document.getElementById('clientLoginBox');
     var signupBox = document.getElementById('signupBox');
+    var adminLoginBox = document.getElementById('adminLoginBox');
+
+    var clientLoginForm = document.getElementById('clientLoginForm');
+    var clientLoginBtn = document.getElementById('clientLoginBtn');
+    var clientWelcomeName = document.getElementById('clientWelcomeName');
+    var clientWelcomeMeta = document.getElementById('clientWelcomeMeta');
+    var clientAddForm = document.getElementById('clientAddForm');
+    var clientSubmitBtn = document.getElementById('clientSubmitBtn');
+    var clientMessage = document.getElementById('clientMessage');
+    var clientViewLink = document.getElementById('clientViewLink');
+    var clientLogoutBtn = document.getElementById('clientLogoutBtn');
+
     var loginForm = document.getElementById('loginForm');
     var signupForm = document.getElementById('signupForm');
     var loginBtn = document.getElementById('loginBtn');
@@ -252,45 +312,66 @@ const adminHtml = `<!DOCTYPE html>
 
     function switchAuthTab(mode) {
         authMessage.innerText = '';
+        tabClientLogin.classList.remove('active');
+        tabSignup.classList.remove('active');
+        tabAdminLogin.classList.remove('active');
+
+        clientLoginBox.style.display = 'none';
+        signupBox.style.display = 'none';
+        adminLoginBox.style.display = 'none';
+
         if (mode === 'signup') {
             tabSignup.classList.add('active');
-            tabLogin.classList.remove('active');
             signupBox.style.display = 'block';
-            loginBox.style.display = 'none';
+        } else if (mode === 'admin') {
+            tabAdminLogin.classList.add('active');
+            adminLoginBox.style.display = 'block';
         } else {
-            tabLogin.classList.add('active');
-            tabSignup.classList.remove('active');
-            loginBox.style.display = 'block';
-            signupBox.style.display = 'none';
+            tabClientLogin.classList.add('active');
+            clientLoginBox.style.display = 'block';
         }
     }
 
-    tabLogin.addEventListener('click', function() { switchAuthTab('login'); });
+    tabClientLogin.addEventListener('click', function() { switchAuthTab('client'); });
     tabSignup.addEventListener('click', function() { switchAuthTab('signup'); });
+    tabAdminLogin.addEventListener('click', function() { switchAuthTab('admin'); });
 
-    window.addEventListener('hashchange', function() {
+    function applyHashMode() {
         if (window.location.hash === '#register' || window.location.hash === '#signup') {
             switchAuthTab('signup');
-        } else if (window.location.hash === '#login') {
-            switchAuthTab('login');
+        } else if (window.location.hash === '#admin') {
+            switchAuthTab('admin');
+        } else if (window.location.hash === '#client') {
+            switchAuthTab('client');
         }
-    });
+    }
 
-    if (window.location.hash === '#register' || window.location.hash === '#signup') {
-        switchAuthTab('signup');
+    window.addEventListener('hashchange', applyHashMode);
+    applyHashMode();
+
+    function showClientPanel(userObj) {
+        sessionStorage.setItem(CLIENT_STORAGE_KEY, JSON.stringify(userObj));
+        authSection.style.display = 'none';
+        adminSection.style.display = 'none';
+        clientSection.style.display = 'block';
+        clientWelcomeName.innerText = 'Welcome, ' + userObj.full_name;
+        clientWelcomeMeta.innerText = userObj.email + ' • Status: ' + userObj.approval_status;
     }
 
     function showAdminPanel(password) {
         authSection.style.display = 'none';
+        clientSection.style.display = 'none';
         adminSection.style.display = 'block';
         loadUsersQueue(password);
     }
 
-    function showLoginPanel(msg, color) {
+    function showAuthScreen(msg, color, mode) {
         sessionStorage.removeItem(PASS_STORAGE_KEY);
+        sessionStorage.removeItem(CLIENT_STORAGE_KEY);
         adminSection.style.display = 'none';
+        clientSection.style.display = 'none';
         authSection.style.display = 'block';
-        switchAuthTab('login');
+        switchAuthTab(mode || 'client');
         authMessage.style.color = color || 'red';
         authMessage.innerText = msg || '';
     }
@@ -406,6 +487,7 @@ const adminHtml = `<!DOCTYPE html>
     }
 
     var savedPass = sessionStorage.getItem(PASS_STORAGE_KEY);
+    var savedClient = sessionStorage.getItem(CLIENT_STORAGE_KEY);
     if (savedPass) {
         verifyPassword(savedPass)
             .then(function(res) {
@@ -416,7 +498,52 @@ const adminHtml = `<!DOCTYPE html>
                 }
             })
             .catch(function() {});
+    } else if (savedClient) {
+        try {
+            var parsedClient = JSON.parse(savedClient);
+            if (parsedClient && parsedClient.approval_status === 'Approved') {
+                showClientPanel(parsedClient);
+            }
+        } catch (e) {}
     }
+
+    clientLoginForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var emailVal = document.getElementById('clientEmail').value.trim();
+        var passVal = document.getElementById('clientPassword').value;
+
+        clientLoginBtn.disabled = true;
+        authMessage.style.color = 'blue';
+        authMessage.innerText = 'Checking approval status...';
+
+        fetch(API_BASE_URL + '/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: emailVal, password: passVal })
+        })
+        .then(function(response) {
+            return response.json().then(function(result) {
+                return { status: response.status, ok: response.ok, result: result };
+            });
+        })
+        .then(function(data) {
+            if (data.ok && data.result && data.result.user) {
+                clientLoginForm.reset();
+                authMessage.innerText = '';
+                showClientPanel(data.result.user);
+            } else {
+                authMessage.style.color = 'red';
+                authMessage.innerText = (data.result && data.result.error) || 'Login failed.';
+            }
+        })
+        .catch(function() {
+            authMessage.style.color = 'red';
+            authMessage.innerText = 'Connection failed!';
+        })
+        .finally(function() {
+            clientLoginBtn.disabled = false;
+        });
+    });
 
     loginForm.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -444,7 +571,7 @@ const adminHtml = `<!DOCTYPE html>
                     authMessage.innerText = '';
                     showAdminPanel(enteredPassword);
                 } else {
-                    showLoginPanel((data.result && data.result.error) || 'Invalid password!', 'red');
+                    showAuthScreen((data.result && data.result.error) || 'Invalid password!', 'red', 'admin');
                 }
             })
             .catch(function() {
@@ -503,7 +630,13 @@ const adminHtml = `<!DOCTYPE html>
         messageDiv.innerText = '';
         viewCertLink.style.display = 'none';
         adminPasswordInput.value = '';
-        showLoginPanel('', 'red');
+        showAuthScreen('', 'red', 'admin');
+    });
+
+    clientLogoutBtn.addEventListener('click', function() {
+        clientMessage.innerText = '';
+        clientViewLink.style.display = 'none';
+        showAuthScreen('', 'red', 'client');
     });
 
     function compressImage(file) {
@@ -555,12 +688,77 @@ const adminHtml = `<!DOCTYPE html>
         });
     }
 
+    clientAddForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var clientObj = null;
+        try {
+            clientObj = JSON.parse(sessionStorage.getItem(CLIENT_STORAGE_KEY) || 'null');
+        } catch (err) {}
+
+        if (!clientObj || !clientObj.email) {
+            showAuthScreen('Session expired. Please login again.', 'red', 'client');
+            return;
+        }
+
+        var fileInput = document.getElementById('clientCertFile');
+        var selectedFile = fileInput.files && fileInput.files[0];
+        var certVal = document.getElementById('clientCertNo').value.trim();
+        var tmVal = document.getElementById('clientTmName').value.trim();
+
+        clientSubmitBtn.disabled = true;
+        clientMessage.style.color = 'blue';
+        clientMessage.innerText = 'Submitting...';
+        clientViewLink.style.display = 'none';
+
+        readFile(selectedFile)
+            .then(function(fileData) {
+                return fetch(API_BASE_URL + '/api/client/add-certificate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: clientObj.email,
+                        certificate_no: certVal,
+                        trademark_name: tmVal,
+                        owner_name: clientObj.full_name,
+                        document_file: fileData.base64,
+                        document_mime_type: fileData.mimeType
+                    })
+                });
+            })
+            .then(function(response) {
+                return response.json().then(function(result) {
+                    return { status: response.status, ok: response.ok, result: result };
+                });
+            })
+            .then(function(resData) {
+                if (resData.ok) {
+                    clientMessage.style.color = 'green';
+                    clientMessage.innerText = 'Saved successfully!';
+                    var tmPath = '/trademark/' + encodeURIComponent(certVal);
+                    var tmUrl = API_BASE_URL + tmPath;
+                    clientViewLink.innerHTML = '<a href="' + tmPath + '" target="_blank" class="view-btn">Open Record: ' + tmUrl + '</a>';
+                    clientViewLink.style.display = 'block';
+                    clientAddForm.reset();
+                } else {
+                    clientMessage.style.color = 'red';
+                    clientMessage.innerText = 'Error: ' + ((resData.result && resData.result.error) || 'Failed to save');
+                }
+            })
+            .catch(function(err) {
+                clientMessage.style.color = 'red';
+                clientMessage.innerText = err.message || 'Upload failed';
+            })
+            .finally(function() {
+                clientSubmitBtn.disabled = false;
+            });
+    });
+
     addCertificateForm.addEventListener('submit', function(e) {
         e.preventDefault();
 
         var currentPassword = sessionStorage.getItem(PASS_STORAGE_KEY) || '';
         if (!currentPassword) {
-            showLoginPanel('Session expired. Please log in again.', 'red');
+            showAuthScreen('Session expired. Please log in again.', 'red', 'admin');
             return;
         }
 
@@ -609,7 +807,7 @@ const adminHtml = `<!DOCTYPE html>
                     viewCertLink.style.display = 'block';
                     addCertificateForm.reset();
                 } else if (resData.status === 401) {
-                    showLoginPanel('Invalid password!', 'red');
+                    showAuthScreen('Invalid password!', 'red', 'admin');
                 } else {
                     messageDiv.style.color = 'red';
                     messageDiv.innerText = 'Error: ' + ((resData.result && resData.result.error) || 'Failed to save');
@@ -801,7 +999,7 @@ function buildPortalPage(initialSerial, recordData) {
     </div>
     <div class="nav-actions">
         <a href="/admin#register" class="signup-btn">Sign Up / Registration</a>
-        <a href="/admin" class="admin-link">Admin</a>
+        <a href="/admin#client" class="admin-link">Client / Admin</a>
     </div>
 </div>
 
@@ -881,14 +1079,14 @@ function buildPortalPage(initialSerial, recordData) {
         },
         management: {
             title: 'Record Management',
-            html: '<p><strong>Admin Upload & Protection:</strong> Authorized administrators can log in to the Admin panel to upload new trademark records and certificate files into the database.</p>' +
-                  '<a href="/admin" class="info-modal-action">Open Admin Panel</a>'
+            html: '<p><strong>Admin & Approved Client Access:</strong> Administrators and approved clients can log in to manage and submit trademark records.</p>' +
+                  '<a href="/admin#client" class="info-modal-action">Open Login Portal</a>'
         },
         privacy: {
             title: 'Privacy Policy',
             html: '<p><strong>Data & Record Privacy:</strong> This portal stores trademark records and uploaded certificate files strictly for lookup, verification, and brand protection purposes.</p>' +
                   '<p><strong>Search & Access:</strong> Searching a trademark serial number queries stored records in the database. No unnecessary personal tracking or third-party ad profiling is performed on lookup requests.</p>' +
-                  '<p><strong>Administrative Access:</strong> Adding or managing records is restricted to authorized administrator credentials.</p>'
+                  '<p><strong>Administrative Access:</strong> Adding or managing records is restricted to authorized credentials.</p>'
         },
         terms: {
             title: 'Terms of Service',
@@ -1015,6 +1213,12 @@ app.post('/api/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
+    if (user.approval_status !== 'Approved') {
+      return res.status(403).json({
+        error: 'Your account status is currently ' + user.approval_status + '. Please wait for admin approval.'
+      });
+    }
+
     res.status(200).json({
       success: true,
       user: {
@@ -1025,6 +1229,46 @@ app.post('/api/login', async (req, res) => {
       }
     });
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/client/add-certificate', async (req, res) => {
+  try {
+    await connectDB();
+    const {
+      email,
+      certificate_no,
+      trademark_name,
+      owner_name,
+      document_file,
+      document_mime_type
+    } = req.body;
+
+    if (!email || !certificate_no || !trademark_name || !document_file) {
+      return res.status(400).json({ error: 'Email, trademark number, name, and file are required' });
+    }
+
+    const clientUser = await User.findOne({ email: String(email).trim().toLowerCase() });
+    if (!clientUser || clientUser.approval_status !== 'Approved') {
+      return res.status(403).json({ error: 'Only approved clients can submit records' });
+    }
+
+    const newCertificate = new Trademark({
+      certificate_no,
+      trademark_name,
+      owner_name: owner_name || clientUser.full_name,
+      status: 'Registered & Active',
+      document_file,
+      document_mime_type
+    });
+
+    await newCertificate.save();
+    res.status(201).json({ message: 'Saved successfully', data: newCertificate });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({ error: 'This record number already exists' });
+    }
     res.status(500).json({ error: error.message });
   }
 });
