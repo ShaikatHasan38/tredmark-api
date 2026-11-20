@@ -506,8 +506,20 @@ function buildPortalPage(initialSerial, recordData) {
         .footer-col-title { font-weight: bold; color: #ffffff; margin-bottom: 10px; margin-top: 18px; }
         .footer-links { list-style: none; padding: 0; margin: 0 0 18px 0; }
         .footer-links li { margin-bottom: 8px; color: #94a3b8; }
-        .footer-links a { color: #94a3b8; text-decoration: none; }
+        .footer-links a { color: #94a3b8; text-decoration: none; cursor: pointer; }
+        .footer-links a:hover { color: #ffffff; text-decoration: underline; }
         .footer-bottom { border-top: 1px solid #1e293b; margin-top: 24px; padding-top: 16px; font-size: 12.5px; color: #64748b; text-align: center; }
+
+        .info-modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); z-index: 999; justify-content: center; align-items: center; padding: 16px; }
+        .info-modal-box { background: #ffffff; color: #1e293b; max-width: 540px; width: 100%; border-radius: 12px; padding: 22px; box-shadow: 0 14px 36px rgba(0,0,0,0.35); box-sizing: border-box; text-align: left; }
+        .info-modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 14px; }
+        .info-modal-title { margin: 0; font-size: 19px; color: #14532d; }
+        .info-close-icon { background: transparent; border: none; font-size: 24px; color: #475569; cursor: pointer; line-height: 1; }
+        .info-modal-body { font-size: 14px; line-height: 1.7; color: #334155; }
+        .info-modal-body p { margin: 0 0 10px 0; }
+        .info-modal-action { display: inline-block; margin-top: 6px; padding: 8px 14px; background: #0f172a; color: #fff; text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: bold; }
+        .info-modal-btn { margin-top: 14px; width: 100%; padding: 10px; background: #15803d; color: #fff; border: none; border-radius: 8px; font-size: 14.5px; font-weight: bold; cursor: pointer; }
+        .info-modal-btn:hover { background: #166534; }
     </style>
 </head>
 <body>
@@ -556,16 +568,16 @@ function buildPortalPage(initialSerial, recordData) {
 
         <div class="footer-col-title">Services</div>
         <ul class="footer-links">
-            <li><a href="/">Trademark Search</a></li>
-            <li><a href="/">Status Verification</a></li>
-            <li><a href="/admin">Record Management</a></li>
+            <li><a onclick="openInfoModal('search')">Trademark Search</a></li>
+            <li><a onclick="openInfoModal('verification')">Status Verification</a></li>
+            <li><a onclick="openInfoModal('management')">Record Management</a></li>
         </ul>
 
         <div class="footer-col-title">Legal</div>
         <ul class="footer-links">
-            <li><a href="/">Privacy Policy</a></li>
-            <li><a href="/">Terms of Service</a></li>
-            <li><a href="/">Disclaimer</a></li>
+            <li><a onclick="openInfoModal('privacy')">Privacy Policy</a></li>
+            <li><a onclick="openInfoModal('terms')">Terms of Service</a></li>
+            <li><a onclick="openInfoModal('disclaimer')">Disclaimer</a></li>
         </ul>
 
         <div class="footer-bottom">
@@ -574,7 +586,72 @@ function buildPortalPage(initialSerial, recordData) {
     </div>
 </footer>
 
+<div id="infoModal" class="info-modal-backdrop" onclick="closeInfoModalOnBackdrop(event)">
+    <div class="info-modal-box">
+        <div class="info-modal-header">
+            <h3 id="infoModalTitle" class="info-modal-title">Information</h3>
+            <button type="button" class="info-close-icon" onclick="closeInfoModal()">&times;</button>
+        </div>
+        <div id="infoModalBody" class="info-modal-body"></div>
+        <button type="button" class="info-modal-btn" onclick="closeInfoModal()">Close</button>
+    </div>
+</div>
+
 <script>
+    var PORTAL_INFO = {
+        search: {
+            title: 'Trademark Search',
+            html: '<p><strong>How to Search:</strong> Enter your exact Trademark Serial or Certificate Number in the search box above and press <strong>Search</strong>.</p>' +
+                  '<p><strong>Direct Link Access:</strong> You can also open a record directly using <code>/trademark/&lt;number&gt;</code>.</p>' +
+                  '<button type="button" class="info-modal-action" onclick="closeInfoModal(); focusSearch();">Go to Search Box</button>'
+        },
+        verification: {
+            title: 'Status Verification',
+            html: '<p><strong>Record & File Inspection:</strong> Once a matching trademark number is found, the portal displays its status, trademark name, owner details, and the stored certificate file.</p>' +
+                  '<p><strong>Viewing Stored Files:</strong> Click <strong>View Stored Tredmark File</strong> inside the record card to inspect the uploaded image or PDF document.</p>'
+        },
+        management: {
+            title: 'Record Management',
+            html: '<p><strong>Admin Upload & Protection:</strong> Authorized administrators can log in to the Admin panel to upload new trademark records and certificate files into the database.</p>' +
+                  '<a href="/admin" class="info-modal-action">Open Admin Panel</a>'
+        },
+        privacy: {
+            title: 'Privacy Policy',
+            html: '<p><strong>Data & Record Privacy:</strong> This portal stores trademark records and uploaded certificate files strictly for lookup, verification, and brand protection purposes.</p>' +
+                  '<p><strong>Search & Access:</strong> Searching a trademark serial number queries stored records in the database. No unnecessary personal tracking or third-party ad profiling is performed on lookup requests.</p>' +
+                  '<p><strong>Administrative Access:</strong> Adding or managing records is restricted to authorized administrator credentials.</p>'
+        },
+        terms: {
+            title: 'Terms of Service',
+            html: '<p><strong>Permitted Use:</strong> Visitors may search trademark serial numbers and inspect stored record information for verification and awareness.</p>' +
+                  '<p><strong>Brand & Document Protection:</strong> Uploaded trademark records, marks, and documents are protected against unauthorized copying, misrepresentation, tampering, or commercial misuse.</p>' +
+                  '<p><strong>Record Accuracy:</strong> Records displayed on this portal reflect entries maintained in the portal database.</p>'
+        },
+        disclaimer: {
+            title: 'Disclaimer',
+            html: '<p><strong>Independent Registry & Educational Portal:</strong> TrademarkRegistryPortal is an independent custom registry and awareness platform built to store and verify trademark records.</p>' +
+                  '<p><strong>No Official Government Affiliation:</strong> This platform is not an official government registry portal and does not replace statutory filings or official government certificates.</p>'
+        }
+    };
+
+    function openInfoModal(key) {
+        var item = PORTAL_INFO[key];
+        if (!item) return;
+        document.getElementById('infoModalTitle').innerText = item.title;
+        document.getElementById('infoModalBody').innerHTML = item.html;
+        document.getElementById('infoModal').style.display = 'flex';
+    }
+
+    function closeInfoModal() {
+        document.getElementById('infoModal').style.display = 'none';
+    }
+
+    function closeInfoModalOnBackdrop(e) {
+        if (e.target && e.target.id === 'infoModal') {
+            closeInfoModal();
+        }
+    }
+
     function handleSearch(e) {
         e.preventDefault();
         var val = document.getElementById('serialInput').value.trim();
